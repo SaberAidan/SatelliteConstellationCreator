@@ -1,0 +1,5 @@
+# IDE files
+.idea/
+
+# dist files
+dist/
