@@ -1,3 +1,4 @@
+import warnings
 
 
 class GroundStation(object):
@@ -62,6 +63,7 @@ class GroundStation(object):
         self.__beam = new_beam
 
     def as_xml(self):
+        warnings.warn("XML support is depreciated and not supported from PIGI 0.8.5 onward", DeprecationWarning)
         return '\t\t<Entity Type="GroundStation" Name="{0}">\n' \
                '\t\t\t<PropertySection Name="UserProperties">\n' \
                '\t\t\t\t<FloatPropertyValue name="Latitude" value="{1}"/>\n' \

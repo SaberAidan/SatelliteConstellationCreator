@@ -4,6 +4,7 @@ A class for creating a satellite object, describing the characteristics of it.
 
 from math import pi
 from .utils import heavenly_body_radius
+import warnings
 
 
 class Satellite(object):
@@ -16,7 +17,6 @@ class Satellite(object):
         self._true_alt = self.altitude + self.__get_radius()
         self._eccentricity = eccentricity
         self._beam = beam
-
 
         if not rads:
             self.inclination = inclination
@@ -132,9 +132,11 @@ class Satellite(object):
                    },
                    "Beam Width": self.beam}
         sat['Type'] = 'satellite'
+        sat['Focus'] = self._focus
         return sat
 
     def as_xml(self, epoch_date='2017-Jan-18 00:00:00', fov=1):
+        warnings.warn("XML support is depreciated and not supported from PIGI 0.8.5 onward", DeprecationWarning)
         return '\t\t< Entity Type = "Satellite" Name = "{0}" >\n' \
                '\t\t\t<PropertySection Name="UserProperties">\n' \
                '\t\t\t\t<StringPropertyValue name="PlanetName" value="Earth"/>\n' \

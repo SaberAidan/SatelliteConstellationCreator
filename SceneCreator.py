@@ -6,10 +6,13 @@ Recreation of the Octave SceneCreator script for use within Flask or other pytho
 from .Constellation import Constellation
 from .GroundStation import GroundStation
 from itertools import zip_longest
-from .utils import mod
+import warnings
+from .utils import mod, heavenly_body_radius
+from .ConstellationExceptions import *
 
 
 def scene_xml_generator(scene):
+    warnings.warn("XML support is depreciated and not supported from PIGI 0.8.5 onward", DeprecationWarning)
     scene_start = '<Pigi>\n' \
                   '\t<Entities>\n' \
                   '\t\t<Entity Type="Planet" Name="Mercury">\n' \
@@ -105,33 +108,36 @@ def constellation_creator(num_constellations, satellite_nums, satellite_planes, 
     """
 
     if num_constellations < 1 or (num_constellations % 1):
-        return -1
+        raise ConstellationNumberError("Invalid integer number of constellations")
 
     if num_constellations != len(satellite_nums):
-        return -1
+        raise ConstellationConfigurationError("Number of constellations does not match number of satellites provided")
 
     if any(mod(satellite_nums, satellite_planes)):
-        return -1
+        raise ConstellationPlaneMismatchError("Number of satellites not compatible with planes in constellation")
 
     for idx, phase in enumerate(plane_phasing):
         if phase < 0:
-            return -1
+            raise PhaseError("Negative number of phases not allowed")
         elif phase >= satellite_planes[idx]:
-            return -1
+            raise PhaseError("Number of phases in constellation larger than number of planes")
         elif phase % 1:
-            return -1
+            raise PhaseError("Number of phases not an integer")
 
     if any(abs(x) > 90 for x in inclination):
-        return -1
+        raise InclinationError("Inclination greater than 90 degrees from equitorial orbit")
 
     if any(x < 0 for x in altitude):
-        return -1
+        raise AltitudeError("Negative altitude not allowed")
 
     if any(x < 0 or x >= 1 for x in eccentricity):
-        return -1
+        raise EccentricityError("Invalid eccentricity. Hyperbolic trajectories not allowed")
 
     if any(x < 0 or x > 180 for x in constellation_beam_width):
-        return -1
+        raise BeamError("Beam width error. Must be within 0 to 180 degrees")
+
+    if focus.lower() not in heavenly_body_radius:
+        raise FocusError("'" + focus.capitalize() + "' not supported as a celestial body origin.")
 
     scene = []
     for idx in range(num_constellations):

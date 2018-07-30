@@ -2,6 +2,7 @@
 Class for holding Constellations of Satellites within it.
 """
 from .Satellite import Satellite
+import warnings
 
 
 class Constellation(object):
@@ -84,6 +85,7 @@ class Constellation(object):
         return constellation
 
     def as_xml(self):
+        warnings.warn("XML support is depreciated and not supported from PIGI 0.8.5 onward", DeprecationWarning)
         return self.as_pigi_output()
 
     def as_pigi_output(self):
