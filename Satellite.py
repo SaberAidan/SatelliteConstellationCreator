@@ -3,16 +3,20 @@ A class for creating a satellite object, describing the characteristics of it.
 """
 
 from math import pi
+from .utils import heavenly_body_radius
 
 
 class Satellite(object):
 
-    def __init__(self, name, altitude, eccentricity, inclination, right_ascension, perigee, ta, beam, rads=False):
+    def __init__(self, name, altitude, eccentricity, inclination, right_ascension, perigee, ta, beam,
+                 focus="earth", rads=False):
         self._name = name
         self._altitude = altitude
-        self._true_alt = self.altitude + 6371
+        self._focus = focus
+        self._true_alt = self.altitude + self.__get_radius()
         self._eccentricity = eccentricity
         self._beam = beam
+
 
         if not rads:
             self.inclination = inclination
@@ -45,7 +49,7 @@ class Satellite(object):
             return ValueError("Satellite's orbital altitude must be over the Karman line.")
         else:
             self._altitude = new_alt
-            self._true_alt = new_alt + 6371
+            self._true_alt = new_alt + self.__get_radius()
 
     @property
     def true_alt(self):
@@ -89,6 +93,9 @@ class Satellite(object):
         else:
             return self.inclination_r * to_deg, self.right_ascension_r * to_deg, self.perigee_r * to_deg, \
                    self.ta_r * to_deg
+
+    def __get_radius(self):
+        return heavenly_body_radius[self._focus.lower()]
 
     def __repr__(self):
         return "{0}, {1}, {2}, {3}, {4}, {5}, {6}".format(self.name, self.altitude, self.eccentricity,

@@ -3,10 +3,10 @@ Recreation of the Octave SceneCreator script for use within Flask or other pytho
 @creator: Aidan O'Brien
 """
 
-from Constellation import Constellation
-from GroundStation import GroundStation
+from .Constellation import Constellation
+from .GroundStation import GroundStation
 from itertools import zip_longest
-from utils import mod
+from .utils import mod
 
 
 def scene_xml_generator(scene):
@@ -88,7 +88,7 @@ def scene_xml_generator(scene):
 
 
 def constellation_creator(num_constellations, satellite_nums, satellite_planes, plane_phasing, inclination, altitude,
-                          eccentricity, constellation_beam_width, sat_name="Sat"):
+                          eccentricity, constellation_beam_width, sat_name="Sat", focus="earth"):
     """
 
     :param num_constellations: Integer of the number of constellations that are for the scene
@@ -100,6 +100,7 @@ def constellation_creator(num_constellations, satellite_nums, satellite_planes, 
     :param eccentricity: List of eccentricities for each constellation
     :param constellation_beam_width: List of Beam widths for satellites in each constellation
     :param sat_name: Root name for satellites, defaults to Sat
+    :param focus: The focus of the satellite, i.e. Earth, Luna, Mars, in lower case.
     :return: Returns a list of constellations that have been formatted
     """
 
@@ -137,7 +138,7 @@ def constellation_creator(num_constellations, satellite_nums, satellite_planes, 
         start_num = sum(satellite_nums[0:idx])
         scene.append(Constellation(satellite_nums[idx], satellite_planes[idx], plane_phasing[idx], inclination[idx],
                                    altitude[idx], eccentricity[idx], constellation_beam_width[idx], name=sat_name,
-                                   starting_number=start_num))
+                                   starting_number=start_num, focus=focus))
 
     return scene
 

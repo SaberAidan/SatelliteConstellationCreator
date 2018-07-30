@@ -1,7 +1,7 @@
 """
 Class for holding Constellations of Satellites within it.
 """
-from Satellite import Satellite
+from .Satellite import Satellite
 
 
 class Constellation(object):
@@ -10,7 +10,7 @@ class Constellation(object):
     """
 
     def __init__(self, num_sats, num_planes, phasing, inclination, altitude,
-                 eccentricity, beam_width, name="Sat", starting_number=0):
+                 eccentricity, beam_width, name="Sat", focus="earth", starting_number=0):
         self.num_sats = num_sats
         self.num_planes = num_planes
         self.phasing = phasing
@@ -20,6 +20,7 @@ class Constellation(object):
         self.beam = beam_width
         self.start_num = starting_number
         self.constellation_name = name
+        self.focus = focus
         self.sats_per_plane, self.correct_phasing = self.__corrected_planes()
         self.perigee_positions = self.__perigee_positions()
         self.raan = self.__calculate_raan()
@@ -56,7 +57,7 @@ class Constellation(object):
             sat_num = i + self.start_num + 1
             sat_name = self.constellation_name + str(sat_num)
             satellites.append(Satellite(sat_name, self.altitude, self.e, self.inclination, self.raan[i],
-                                        self.perigee_positions[i], self.ta[i], self.beam))
+                                        self.perigee_positions[i], self.ta[i], self.beam, focus=self.focus))
         return satellites
 
     def __repr__(self):
