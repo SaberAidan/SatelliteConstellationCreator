@@ -2,17 +2,24 @@
 ===============================
 Satellite-Constellation-Creator
 ===============================
+.. image:: https://img.shields.io/pypi/v/satellite-constellation.svg
+    :target: https://pypi.python.org/pypi/satellite-constellation
 
+.. image:: https://
 Library for representing satellite constellations and ground stations
 
 
 Installation
 -------------
 To install latest released version::
+
     pip install satellite-constellation
-    
+
+
 To install from github master branch::
+
     pip install https://github.com/SaberAidan/SatelliteConstellationCreator
+
 
 For development::
 
