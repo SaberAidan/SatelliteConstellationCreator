@@ -2,10 +2,15 @@
 ===============================
 Satellite-Constellation-Creator
 ===============================
+
+
 .. image:: https://img.shields.io/pypi/v/satellite-constellation.svg
     :target: https://pypi.python.org/pypi/satellite-constellation
 
-.. image:: https://
+.. image:: https://img.shields.io/travis/SaberAidan/SatelliteConstellationCreator.svg
+    :target: https://travis-ci.org/SaberAidan/SatelliteConstellationCreator
+
+
 Library for representing satellite constellations and ground stations
 
 
