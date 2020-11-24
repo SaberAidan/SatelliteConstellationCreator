@@ -2,7 +2,9 @@
 Class for holding Constellations of Satellites within it.
 """
 from .Satellite import Satellite
+from .utils import heavenly_body_radius
 import warnings
+import math
 
 
 class Constellation(object):
@@ -94,4 +96,61 @@ class Constellation(object):
             short_scene += sat.as_xml()
 
         return short_scene
+
+class SOCConstellation:
+    def __init__(self, street_width ,altitude, beam_width, raan, name="Sat", focus="earth", starting_number=0): #Start off with just a single polar orbit
+        self.inclination = 90 #Polar Orbit
+        self.altitude = altitude
+        self.beam = beam_width
+        self.start_num = starting_number
+        self.raan = raan
+        self.constellation_name = name
+        self.focus = focus
+        self.street_width = street_width
+        self.earth_coverage_radius, self.earth_coverage_angle = self.__calculate_earth_coverage()
+        self.linear_spacing, self.angular_spacing = self.__calculate_spacing()
+        self.num_satellites = self.__calculate_required_satellites()
+        self.ta = self.__calculate_ta()
+        # self.sats_per_plane, self.correct_phasing = self.__corrected_planes()
+        # self.perigee_positions = self.__perigee_positions()
+        # self.ta = self.__calculate_ta()
+        # self.satellites = self.__build_satellites()
+
+    def __calculate_spacing(self):
+        spacing = 360/self.num_sats
+        return spacing
+
+    def __calculate_ta(self):
+        ta = [0] * self.num_sats
+        # for i in range(self.sats_per_plane, self.num_sats):
+        #     ta[i] = ta[i - self.sats_per_plane] + self.correct_phasing
+        return ta
+
+    def __calculate_earth_coverage(self):
+        x = self.altitude * math.tan((math.pi/180)*self.beam/2)
+        theta = math.asin(x/heavenly_body_radius[self.focus])
+        r = heavenly_body_radius[self.focus]*theta
+        # print(r,theta*180/math.pi)
+
+        return r, theta
+
+    def __calculate_spacing(self):
+        y = math.sqrt(math.pow(self.earth_coverage_radius,2)-math.pow(self.street_width/2,2))
+        ang_spacing = 2*y/heavenly_body_radius[self.focus]
+        print(ang_spacing)
+        return y, ang_spacing
+
+    def __calculate_required_satellites(self):
+        num_satellites = round(math.pi*2/self.angular_spacing)
+        return num_satellites
+
+    def __calculate_ta(self):
+        ta = [0] * self.num_satellites
+        for idx, anom in enumerate(ta):
+            ta[idx] = idx*self.angular_spacing
+            print(idx,ta[idx])
+        return ta
+
+
+
 

@@ -1,6 +1,6 @@
 import unittest
 from satellite_constellation.Satellite import Satellite
-from satellite_constellation.Constellation import Constellation
+from satellite_constellation.Constellation import SOCConstellation
 from satellite_constellation.ConstellationExceptions import *
 from satellite_constellation.SceneCreator import constellation_creator
 import warnings
@@ -8,13 +8,14 @@ import warnings
 class testSatellite(unittest.TestCase):
 
     # def setUp(self):
-    #     self.constellation_creator = constellation_creator(1,[1],[1],[1],[30],[500],[0.5],[20])
+    #     testCons = SOCConstellation(10, 1500, 90,20)
+    #     self.constellation = constellation_creator(1, [18], [3], [1], [30], [1000], [0.5], [20])
 
     def test_0_constellations(self): #Check for number error with 0 constellations
         constellation_num = 0
         T, P, F = 1, 1, 1
         with self.assertRaises(ConstellationNumberError) as error:
-            self.constellation = constellation_creator(constellation_num,[T],[P],[F],[30],[1],[0.5],[20])
+            self.constellation = constellation_creator(constellation_num,[T],[P],[F],[30],[1000],[0.5],[20])
 
     def test_constellation_mismatch(self): #Check for mismatch error catching with an empty satellite nums list
         constellation_num = 1
