@@ -93,7 +93,6 @@ def scene_xml_generator(scene):
 def constellation_creator(num_constellations, satellite_nums, satellite_planes, plane_phasing, inclination, altitude,
                           eccentricity, constellation_beam_width, sat_name="Sat", focus="earth"):
     """
-
     :param num_constellations: Integer of the number of constellations that are for the scene
     :param satellite_nums: List of numbers of satellites for each constellation
     :param satellite_planes: List of number of planes of satellites for each constellation.
@@ -121,21 +120,28 @@ def constellation_creator(num_constellations, satellite_nums, satellite_planes, 
             raise PhaseError("Negative number of phases not allowed")
         # elif phase >= satellite_planes[idx]:
         #     raise PhaseError("Number of phases in constellation larger than number of planes")
-        elif (satellite_nums[idx] % phase) != 0:
-            raise PhaseError("Number of satellites must be divisible by the number of phases")
+        # elif (satellite_nums[idx] % phase) != 0:
+        #     raise PhaseError("Number of satellites must be divisible by the number of phases")
         elif phase % 1:
             raise PhaseError("Number of phases not an integer")
+        elif phase % satellite_planes[idx] == 0:
+            raise PhaseError("Phase cannot equal number of planes times a constant")
 
     if any(abs(x) > 90 for x in inclination):
         raise InclinationError("Inclination greater than 90 degrees from equitorial orbit")
+        #Could implement wrap around of angles here
 
     if any(x < 0 for x in altitude):
         raise AltitudeError("Negative altitude not allowed")
+    elif any(x < 100 for x in altitude):
+        raise AltitudeError("Altitude below Karman line")
 
-    if any(x < 0 or x >= 1 for x in eccentricity):
+    if any(x < 0 for x in eccentricity):
+        raise EccentricityError("Invalid eccentricity. Eccentricity cannot be less than 0")
+    elif any(x >= 1 for x in eccentricity):
         raise EccentricityError("Invalid eccentricity. Hyperbolic trajectories not allowed")
 
-    if any(x < 0 or x > 180 for x in constellation_beam_width):
+    if any(x <= 0 or x > 180 for x in constellation_beam_width):
         raise BeamError("Beam width error. Must be within 0 to 180 degrees")
 
     if focus.lower() not in heavenly_body_radius:
