@@ -1,16 +1,18 @@
 import unittest
 from satellite_constellation.Satellite import Satellite
-from satellite_constellation.Constellation import SOCConstellation
+from satellite_constellation.Constellation import SOCConstellation, Constellation
 from satellite_constellation.ConstellationExceptions import *
 from satellite_constellation.SceneCreator import constellation_creator
+import math
 import warnings
 
 
-class testSatellite(unittest.TestCase):  # Test for errors in the constellation creator
+class TestConstellationCreator(unittest.TestCase):  # Test for errors in the constellation creator
 
-    def setUp(self):
-        testCons = SOCConstellation(1, 10, 1500, 60, [20], 0.8, 100)
-        # self.constellation = constellation_creator(1, [18], [3], [1], [30], [1000], [0], [20])
+    # def setUp(self):
+    # testCons = SOCConstellation(1, 10, 1500, 60, [20], 0.8, 100)
+    # self.satellite = Satellite( "temp", 1000, 0, 10, 20, 30, 40, 50, focus="earth", rads=True)
+    # self.constellation = constellation_creator(1, [18], [3], [1], [30], [1000], [0], [20])
 
     def test_0_constellations(self):  # Check for number error with 0 constellations
         constellation_num = 0
@@ -80,22 +82,61 @@ class testSatellite(unittest.TestCase):  # Test for errors in the constellation 
         with self.assertRaises(FocusError):  # Beam width > 180
             constellation = constellation_creator(1, [T], [P], [F], [30], [1000], [0.5], [50], focus="notafocus")
 
-class testStreets(unittest.TestCase):
+
+class TestSatellite(unittest.TestCase):
 
     def setUp(self):
-        self.streets_constellation = testCons = SOCConstellation(1, 10, 1500, 60, [20], 0.8, 100)
+        self.satellite = Satellite("testSat", 1000, 0, 10, 20, 30, 40, 30, rads=False)
+
+    def test_true_altitude(self):
+        self.assertEqual(self.satellite.true_alt, 7371)
+
+    def test_deg_to_rad(self):
+        self.assertAlmostEqual(0.1745, self.satellite.inclination_r, 4)
+        self.assertAlmostEqual(0.3491, self.satellite.right_ascension_r, 4)
+        self.assertAlmostEqual(0.5236, self.satellite.perigee_r, 4)
+        self.assertAlmostEqual(0.6981, self.satellite.ta_r, 4)
+
+    def test_rad_to_degree(self):
+        rad_sat = Satellite("testSat", 1000, 0, math.pi / 5, math.pi / 4, math.pi / 3, math.pi / 2, math.pi / 5,
+                            rads=True)
+        self.assertAlmostEqual(36, rad_sat.inclination, 4)
+        self.assertAlmostEqual(45, rad_sat.right_ascension, 4)
+        self.assertAlmostEqual(60, rad_sat.perigee, 4)
+        self.assertAlmostEqual(90, rad_sat.ta, 4)
+
+
+class TestWalker(unittest.TestCase):
+
+    def setUp(self):
+        self.walker_constellation = Constellation(18, 3, 1, 30, 1000, 0, 20)
+
+    def test_sats_per_plane(self):
+        self.assertEqual(6, self.walker_constellation.sats_per_plane)
+
+    def test_phasing(self):
+        self.assertEqual(20, self.walker_constellation.correct_phasing)
+
+    def test_phasing(self):
+        self.assertEqual(20, self.walker_constellation.correct_phasing)
+
+
+class TestStreets(unittest.TestCase):
+
+    def setUp(self):
+        self.streets_constellation = SOCConstellation(1, 10, 1500, 60, [20], 0.8, 100)
 
     def test_perigee(self):
-        self.assertAlmostEqual(self.streets_constellation.perigee,7871,3)
+        self.assertAlmostEqual(self.streets_constellation.perigee, 7871, 3)
 
     def test_semi_major(self):
-        self.assertAlmostEqual(self.streets_constellation.semi_major,39355,3)
+        self.assertAlmostEqual(self.streets_constellation.semi_major, 39355, 3)
 
     def test_orbital_period(self):
-        self.assertAlmostEqual(self.streets_constellation.orbital_period, 77700.55,1)
+        self.assertAlmostEqual(self.streets_constellation.orbital_period, 77700.55, 1)
 
     def test_earth_radial_coverage(self):
-        self.assertAlmostEqual(self.streets_constellation.earth_coverage_radius, 868.7 , 1)
+        self.assertAlmostEqual(self.streets_constellation.earth_coverage_radius, 868.7, 1)
 
     def test_earth_angular_coverage(self):
         self.assertAlmostEqual(self.streets_constellation.earth_coverage_angle, 0.136, 3)
@@ -105,9 +146,7 @@ class testStreets(unittest.TestCase):
 
     def test_required_satellites_by_period(self):
         streets_constellation = SOCConstellation(1, 10, 1500, 60, [20], 0.8, 7770)
-        self.assertAlmostEqual(streets_constellation.num_sats,10,1)
-
-
+        self.assertAlmostEqual(streets_constellation.num_sats, 10, 1)
 
 
 if __name__ == '__main__':
