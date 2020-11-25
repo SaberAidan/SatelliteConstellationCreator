@@ -29,9 +29,11 @@ heavenly_body_radius = {
 
 heavenly_body_mass = {
     "earth": 5.972*10**24, # [kg]
-
 }
 
+constants = {
+    "G" : 6.67408*10**(-11), #m^3 kg^-1 s^-2
+}
 
 def proper_round(num, dec=0):  # Add exception check for no decimal point found
 
