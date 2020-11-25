@@ -2,7 +2,7 @@
 Class for holding Constellations of Satellites within it.
 """
 from .Satellite import Satellite
-from .utils import heavenly_body_radius, heavenly_body_mass, proper_round
+from .utils import *
 import warnings
 import math
 
@@ -28,7 +28,7 @@ class Constellation(object):
         self.raan = self.__calculate_raan()
         self.ta = self.__calculate_ta()
         self.satellites = self.__build_satellites()
-        print(self.__str__())
+
 
     def __corrected_planes(self):
         sats_per_plane = int(self.num_sats / self.num_planes)
@@ -59,7 +59,6 @@ class Constellation(object):
         for i in range(self.num_sats):
             sat_num = i + self.start_num + 1
             sat_name = self.constellation_name + " " + str(sat_num)
-            # print('raan', self.raan[i] , ", perigee", self.perigee_positions[i] , ", ta" , self.ta[i])
             satellites.append(Satellite(sat_name, self.altitude, self.e, self.inclination, self.raan[i],
                                         self.perigee_positions[i], self.ta[i], self.beam, focus=self.focus,rads = False))
         return satellites
@@ -98,7 +97,7 @@ class Constellation(object):
 
         return short_scene
 
-class SOCConstellation:
+class SOCConstellation: #Needs to be cleaned up
     def __init__(self, num_streets, street_width ,altitude, beam_width, raan, eccentricity, revisit_time, name="Sat", focus="earth", starting_number=0): #Start off with just a single polar orbit
         self.inclination = 90  # Polar Orbit
         self.num_streets = num_streets
@@ -114,16 +113,10 @@ class SOCConstellation:
         self.earth_coverage_radius, self.earth_coverage_angle = self.__calculate_earth_coverage()
         self.linear_spacing, self.angular_spacing = self.__calculate_spacing()
         self.perigee, self.semi_major, self.orbital_period = self.__calculate_orbit_params()
-        self.num_sats, self.sats_per_street = self.__calculate_required_satellites()
-        self.perigee = self.__perigee_positions()
+        self.num_sats, self.sats_per_street, self.true_spacing = self.__calculate_required_satellites()
+        self.perigee_positions = self.__perigee_positions()
         self.ta = self.__calculate_ta()
-        print(self.num_sats, "satellites w/", self.angular_spacing , "degrees spacing")
         self.satellites = self.__build_satellites()
-        print(self.__str__())
-
-        # self.sats_per_plane, self.correct_phasing = self.__corrected_planes()
-        # self.perigee_positions = self.__perigee_positions()
-        # self.satellites = self.__build_satellites()
 
     def __calculate_earth_coverage(self):
         x = self.altitude * math.tan((math.pi/180)*self.beam/2)
@@ -132,19 +125,20 @@ class SOCConstellation:
         return r, theta
 
     def __calculate_spacing(self):
-        y = math.sqrt(math.pow(self.earth_coverage_radius,2)-math.pow(self.street_width/2,2))
+        street_width = heavenly_body_radius[self.focus]*self.street_width*math.pi/180
+        y = math.sqrt(math.pow(self.earth_coverage_radius,2)-math.pow(street_width/2,2))
         ang_spacing = 2*y/heavenly_body_radius[self.focus]
         return y, ang_spacing
 
     def __calculate_orbit_params(self):
         perigee = heavenly_body_radius[self.focus] + self.altitude  # [km]
         semi_major = perigee/(1-self.eccentricity)  # [km]
-        orbital_period = 2*math.pi*math.sqrt((semi_major*10**3)**3/(heavenly_body_mass[self.focus]*6.67408*10**(-11)))  # [s]
+        orbital_period = 2*math.pi*math.sqrt((semi_major*10**3)**3/(heavenly_body_mass[self.focus]*constants['G']))  # [s]
         return perigee, semi_major, orbital_period
 
     def __calculate_required_satellites(self):
         num_satellites_a = self.orbital_period / self.revisit_time  # Calculated from revisit time
-        num_satellites_b = math.pi * 2 / self.angular_spacing  # Total coverage
+        num_satellites_b = 2* math.pi / self.angular_spacing  # Total coverage
 
         if num_satellites_a > num_satellites_b:
             num_satellites = num_satellites_b
@@ -155,27 +149,16 @@ class SOCConstellation:
         lower = math.floor(num_satellites)
 
         if num_satellites - lower <= 0.01:
-            self.angular_spacing = 2*math.pi/lower
-            # print(self.angular_spacing)
-            self.angular_spacing = 360/lower
+            true_spacing = 360/lower
             total_satellites = lower*self.num_streets
-            return total_satellites, lower
+            return total_satellites, lower, true_spacing
         else:
-            # self.angular_spacing = 2*math.pi/upper
-            # print(self.angular_spacing)
-            self.angular_spacing = 360/upper
+            true_spacing = 360/upper
             total_satellites = upper*self.num_streets
-            return total_satellites, upper
-
-    # def __calculate_ta(self):
-    #     ta = [0] * self.num_sats
-    #     for idx, anom in enumerate(ta):
-    #         ta[idx] = idx*self.angular_spacing
-    #     return ta
+            return total_satellites, upper, true_spacing
 
     def __calculate_ta(self):
         phase = 360/self.num_sats
-        print(phase)
         ta = [0] * self.num_sats
         for i in range(self.num_streets):
             for j in range(self.sats_per_street):
@@ -189,7 +172,6 @@ class SOCConstellation:
             all_perigees.extend(perigees)
         return all_perigees
 
-
     def __build_satellites(self):
         satellites = []
         for i in range(self.num_streets):
@@ -197,7 +179,7 @@ class SOCConstellation:
                 sat_num = i * self.sats_per_street + j + self.start_num + 1
                 sat_name = self.constellation_name + " " + str(sat_num)
                 satellites.append(Satellite(sat_name, self.altitude, self.eccentricity, self.inclination, self.raan[i],
-                                            self.perigee[j], self.ta[i*self.sats_per_street+j], self.beam, focus=self.focus,rads = False))
+                                            self.perigee_positions[j], self.ta[i*self.sats_per_street+j], self.beam, focus=self.focus,rads = False))
         return satellites
 
     def __repr__(self):

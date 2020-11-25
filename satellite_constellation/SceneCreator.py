@@ -89,9 +89,8 @@ def scene_xml_generator(scene):
 
     return "{0} {1} {2}".format(scene_start, scene_xml, scene_end)
 
-
 def constellation_creator(num_constellations, satellite_nums, satellite_planes, plane_phasing, inclination, altitude,
-                          eccentricity, constellation_beam_width, sat_name="Sat", focus="earth"):
+                          eccentricity, constellation_beam_width, constellation_type = "walker", sat_name="Sat", focus="earth"):
     """
     :param num_constellations: Integer of the number of constellations that are for the scene
     :param satellite_nums: List of numbers of satellites for each constellation
@@ -101,6 +100,7 @@ def constellation_creator(num_constellations, satellite_nums, satellite_planes, 
     :param altitude: List of altitudes for constellations
     :param eccentricity: List of eccentricities for each constellation
     :param constellation_beam_width: List of Beam widths for satellites in each constellation
+    :param constellation_type: Constellation type, currently either "walker" or "streets"
     :param sat_name: Root name for satellites, defaults to Sat
     :param focus: The focus of the satellite, i.e. Earth, Luna, Mars, in lower case.
     :return: Returns a list of constellations that have been formatted
