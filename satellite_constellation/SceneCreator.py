@@ -89,9 +89,19 @@ def scene_xml_generator(scene):
 
     return "{0} {1} {2}".format(scene_start, scene_xml, scene_end)
 
+
+
 def constellation_creator(num_constellations, satellite_nums, satellite_planes, plane_phasing, inclination, altitude,
-                          eccentricity, constellation_beam_width, constellation_type = "walker", sat_name="Sat", focus="earth"):
+                          eccentricity, constellation_beam_width, sat_name="Sat", focus="earth"):
     """
+
+    Need to add the streets of coverage method to the scene creator
+    Change this to use 3 param
+    Number of constellations
+    List of constellation types
+    List of dict with constellation vars, dict change with different type
+
+
     :param num_constellations: Integer of the number of constellations that are for the scene
     :param satellite_nums: List of numbers of satellites for each constellation
     :param satellite_planes: List of number of planes of satellites for each constellation.

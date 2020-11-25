@@ -29,7 +29,6 @@ class Constellation(object):
         self.ta = self.__calculate_ta()
         self.satellites = self.__build_satellites()
 
-
     def __corrected_planes(self):
         sats_per_plane = int(self.num_sats / self.num_planes)
         corrected_phasing = 360 * self.phasing / self.num_sats
@@ -194,3 +193,11 @@ class SOCConstellation: #Needs to be cleaned up
             sat_string += sat.__str__() + '\n'
 
         return sat_string.rstrip()
+
+    def as_dict(self):
+        constellation = {}
+        for sat in self.satellites:
+            if sat.name not in constellation:
+                constellation[sat.name] = sat.as_dict()
+        constellation['Type'] = 'Streets'
+        return constellation
