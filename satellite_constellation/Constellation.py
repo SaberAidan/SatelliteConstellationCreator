@@ -6,7 +6,6 @@ from .utils import *
 import warnings
 import math
 
-
 class Constellation(object):
     """
     Class for describing and holding a constellation of satellites
@@ -96,6 +95,59 @@ class Constellation(object):
 
         return short_scene
 
+class FlowerConstellation(object):
+
+    def __init__(self, num_satellites ,orbit_period, altitude, inclination, perigee_argument, raan, num_petals, satellites_per_petal,repeat_days, focus = 'earth'):
+        self.num_satellites = num_satellites
+        self.raan = raan
+        self.num_petals = num_petals
+        self.repeat_days = repeat_days
+        self.orbit_period = orbit_period
+        self.altitude = altitude
+        self.inclination = inclination
+        self.perigee_argument = perigee_argument
+        self.focus = focus
+        self.semi_major, self.eccentricity = self.__calculate_orbit_params()
+        self.mean_motion, self.RAAN_rate, self.mean_anomaly_rate = self.__calculate_mean_anomaly_rate()
+        self.__calculate_multiple_orbits()
+        self.__calculate_single_orbits()
+
+    def __calculate_orbit_params(self):
+        # semi_major = math.pow(constants['G']*heavenly_body_mass[self.focus]*math.pow(self.orbit_period/(2*math.pi),2),1/3)
+        semi_major = math.pow(constants['G']*heavenly_body_mass[self.focus]*math.pow(self.orbit_period/(2*math.pi),2),1/3)
+        eccentricity =1-(heavenly_body_radius[self.focus] + self.altitude)/(semi_major*10**-3)
+        return semi_major, eccentricity
+
+    def __calculate_mean_anomaly_rate(self):
+        semi_parameter =  (self.semi_major*10**(-3))*(1-self.eccentricity**2)
+        psi = 3*heavenly_body_radius[self.focus]**2*constants["J2E"]/(4*semi_parameter**2)
+        mean_motion = (2*math.pi)/self.orbit_period
+        mean_anomaly_rate = -1*psi*mean_motion*math.sqrt(1-self.eccentricity**2)*(3*math.pow(math.sin(self.inclination*math.pi/180),2)-2)
+        RAAN_rate = -2*psi*mean_motion*math.cos(self.inclination*math.pi/180)
+        return mean_motion,RAAN_rate,mean_anomaly_rate
+
+    def __calculate_multiple_orbits(self):
+        M = [0]
+        v = [0]
+        for idx in range(1, self.num_petals):
+            Mi = M[idx-1] + (self.mean_motion + self.mean_anomaly_rate)*(self.raan[idx-1] - self.raan[idx])/(constants["wE"] + self.RAAN_rate)
+            M.append(Mi)
+            vi = Mi + (2*self.eccentricity - 0.25*math.pow(self.eccentricity,3))*math.sin(Mi*math.pi/180)
+            v.append(vi)
+            print(Mi*180/math.pi,vi*180/math.pi)
+            # print(Mi,vi)
+
+    def __calculate_single_orbits(self):
+        M = [0]
+        v = [0]
+        for idx in range(1, self.repeat_days - 1):
+            Mi = M[idx-1] + 2*math.pi*(self.mean_motion+self.mean_anomaly_rate)/(constants["wE"]+self.RAAN_rate)
+            M.append(Mi)
+            vi = Mi + (2*self.eccentricity - 0.25*math.pow(self.eccentricity,3))*math.sin(Mi*math.pi/180)
+            v.append(vi)
+            print(Mi*180/math.pi,vi*180/math.pi)
+
+
 class SOCConstellation: #Needs to be cleaned up
     def __init__(self, num_streets, street_width ,altitude, beam_width, raan, eccentricity, revisit_time, name="Sat", focus="earth", starting_number=0): #Start off with just a single polar orbit
         self.inclination = 90  # Polar Orbit
@@ -116,6 +168,7 @@ class SOCConstellation: #Needs to be cleaned up
         self.perigee_positions = self.__perigee_positions()
         self.ta = self.__calculate_ta()
         self.satellites = self.__build_satellites()
+        self.longitudinal_drift = self.__calculate_longitudinal_drift()
 
     def __calculate_earth_coverage(self):
         x = self.altitude * math.tan((math.pi/180)*self.beam/2)
@@ -180,6 +233,10 @@ class SOCConstellation: #Needs to be cleaned up
                 satellites.append(Satellite(sat_name, self.altitude, self.eccentricity, self.inclination, self.raan[i],
                                             self.perigee_positions[j], self.ta[i*self.sats_per_street+j], self.beam, focus=self.focus,rads = False))
         return satellites
+
+    def __calculate_longitudinal_drift(self):
+        drift = self.orbital_period*constants["wE"]*180/math.pi
+        return drift
 
     def __repr__(self):
         return "{0}, {1}, {2}, {3}, {4}".format(self.num_sats,
