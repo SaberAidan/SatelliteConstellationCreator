@@ -32,7 +32,9 @@ heavenly_body_mass = {
 }
 
 constants = {
-    "G" : 6.67408*10**(-11), #m^3 kg^-1 s^-2
+    "G" : 6.67408*10**(-11), # Gravitational constant [m^3 kg^-1 s^-2]
+    "wE" : 7.2921159*10**(-5), # Earth angular velocity [rad/s]
+    "J2E" : 10826269*10**(-3), # Earth J2 constant
 }
 
 def proper_round(num, dec=0):  # Add exception check for no decimal point found
