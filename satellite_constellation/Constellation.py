@@ -6,10 +6,12 @@ from .utils import *
 import warnings
 import math
 
-class Constellation(object):
+
+class WalkerConstellation:
     """
     Class for describing and holding a constellation of satellites
     """
+
     def __init__(self, num_sats, num_planes, phasing, inclination, altitude,
                  eccentricity, beam_width, name="Sat", focus="earth", starting_number=0):
         self.num_sats = num_sats
@@ -34,7 +36,7 @@ class Constellation(object):
         return sats_per_plane, corrected_phasing
 
     def __perigee_positions(self):
-        perigees = list(range(0, 360, int(360/self.sats_per_plane)))
+        perigees = list(range(0, 360, int(360 / self.sats_per_plane)))
         all_perigees = []
         for i in range(self.num_sats):
             all_perigees.extend(perigees)
@@ -58,7 +60,7 @@ class Constellation(object):
             sat_num = i + self.start_num + 1
             sat_name = self.constellation_name + " " + str(sat_num)
             satellites.append(Satellite(sat_name, self.altitude, self.e, self.inclination, self.raan[i],
-                                        self.perigee_positions[i], self.ta[i], self.beam, focus=self.focus,rads = False))
+                                        self.perigee_positions[i], self.ta[i], self.beam, focus=self.focus, rads=False))
         return satellites
 
     def __repr__(self):
@@ -95,61 +97,10 @@ class Constellation(object):
 
         return short_scene
 
-class FlowerConstellation(object):
 
-    def __init__(self, num_satellites ,orbit_period, altitude, inclination, perigee_argument, raan, num_petals, satellites_per_petal,repeat_days, focus = 'earth'):
-        self.num_satellites = num_satellites
-        self.raan = raan
-        self.num_petals = num_petals
-        self.repeat_days = repeat_days
-        self.orbit_period = orbit_period
-        self.altitude = altitude
-        self.inclination = inclination
-        self.perigee_argument = perigee_argument
-        self.focus = focus
-        self.semi_major, self.eccentricity = self.__calculate_orbit_params()
-        self.mean_motion, self.RAAN_rate, self.mean_anomaly_rate = self.__calculate_mean_anomaly_rate()
-        self.__calculate_multiple_orbits()
-        self.__calculate_single_orbits()
-
-    def __calculate_orbit_params(self):
-        # semi_major = math.pow(constants['G']*heavenly_body_mass[self.focus]*math.pow(self.orbit_period/(2*math.pi),2),1/3)
-        semi_major = math.pow(constants['G']*heavenly_body_mass[self.focus]*math.pow(self.orbit_period/(2*math.pi),2),1/3)
-        eccentricity =1-(heavenly_body_radius[self.focus] + self.altitude)/(semi_major*10**-3)
-        return semi_major, eccentricity
-
-    def __calculate_mean_anomaly_rate(self):
-        semi_parameter =  (self.semi_major*10**(-3))*(1-self.eccentricity**2)
-        psi = 3*heavenly_body_radius[self.focus]**2*constants["J2E"]/(4*semi_parameter**2)
-        mean_motion = (2*math.pi)/self.orbit_period
-        mean_anomaly_rate = -1*psi*mean_motion*math.sqrt(1-self.eccentricity**2)*(3*math.pow(math.sin(self.inclination*math.pi/180),2)-2)
-        RAAN_rate = -2*psi*mean_motion*math.cos(self.inclination*math.pi/180)
-        return mean_motion,RAAN_rate,mean_anomaly_rate
-
-    def __calculate_multiple_orbits(self):
-        M = [0]
-        v = [0]
-        for idx in range(1, self.num_petals):
-            Mi = M[idx-1] + (self.mean_motion + self.mean_anomaly_rate)*(self.raan[idx-1] - self.raan[idx])/(constants["wE"] + self.RAAN_rate)
-            M.append(Mi)
-            vi = Mi + (2*self.eccentricity - 0.25*math.pow(self.eccentricity,3))*math.sin(Mi*math.pi/180)
-            v.append(vi)
-            print(Mi*180/math.pi,vi*180/math.pi)
-            # print(Mi,vi)
-
-    def __calculate_single_orbits(self):
-        M = [0]
-        v = [0]
-        for idx in range(1, self.repeat_days - 1):
-            Mi = M[idx-1] + 2*math.pi*(self.mean_motion+self.mean_anomaly_rate)/(constants["wE"]+self.RAAN_rate)
-            M.append(Mi)
-            vi = Mi + (2*self.eccentricity - 0.25*math.pow(self.eccentricity,3))*math.sin(Mi*math.pi/180)
-            v.append(vi)
-            print(Mi*180/math.pi,vi*180/math.pi)
-
-
-class SOCConstellation: #Needs to be cleaned up
-    def __init__(self, num_streets, street_width ,altitude, beam_width, raan, eccentricity, revisit_time, name="Sat", focus="earth", starting_number=0): #Start off with just a single polar orbit
+class SOCConstellation:  # Needs to be cleaned up
+    def __init__(self, num_streets, street_width, altitude, beam_width, raan, eccentricity, revisit_time, name="Sat",
+                 focus="earth", starting_number=0):  # Start off with just a single polar orbit
         self.inclination = 90  # Polar Orbit
         self.num_streets = num_streets
         self.altitude = altitude
@@ -171,26 +122,27 @@ class SOCConstellation: #Needs to be cleaned up
         self.longitudinal_drift = self.__calculate_longitudinal_drift()
 
     def __calculate_earth_coverage(self):
-        x = self.altitude * math.tan((math.pi/180)*self.beam/2)
-        theta = math.asin(x/heavenly_body_radius[self.focus])
-        r = heavenly_body_radius[self.focus]*theta
+        x = self.altitude * math.tan((math.pi / 180) * self.beam / 2)
+        theta = math.asin(x / heavenly_body_radius[self.focus])
+        r = heavenly_body_radius[self.focus] * theta
         return r, theta
 
     def __calculate_spacing(self):
-        street_width = heavenly_body_radius[self.focus]*self.street_width*math.pi/180
-        y = math.sqrt(math.pow(self.earth_coverage_radius,2)-math.pow(street_width/2,2))
-        ang_spacing = 2*y/heavenly_body_radius[self.focus]
+        street_width = heavenly_body_radius[self.focus] * self.street_width * math.pi / 180
+        y = math.sqrt(math.pow(self.earth_coverage_radius, 2) - math.pow(street_width / 2, 2))
+        ang_spacing = 2 * y / heavenly_body_radius[self.focus]
         return y, ang_spacing
 
     def __calculate_orbit_params(self):
         perigee = heavenly_body_radius[self.focus] + self.altitude  # [km]
-        semi_major = perigee/(1-self.eccentricity)  # [km]
-        orbital_period = 2*math.pi*math.sqrt((semi_major*10**3)**3/(heavenly_body_mass[self.focus]*constants['G']))  # [s]
+        semi_major = perigee / (1 - self.eccentricity)  # [km]
+        orbital_period = 2 * math.pi * math.sqrt(
+            (semi_major * 10 ** 3) ** 3 / (heavenly_body_mass[self.focus] * constants['G']))  # [s]
         return perigee, semi_major, orbital_period
 
     def __calculate_required_satellites(self):
         num_satellites_a = self.orbital_period / self.revisit_time  # Calculated from revisit time
-        num_satellites_b = 2* math.pi / self.angular_spacing  # Total coverage
+        num_satellites_b = 2 * math.pi / self.angular_spacing  # Total coverage
 
         if num_satellites_a > num_satellites_b:
             num_satellites = num_satellites_b
@@ -201,24 +153,24 @@ class SOCConstellation: #Needs to be cleaned up
         lower = math.floor(num_satellites)
 
         if num_satellites - lower <= 0.01:
-            true_spacing = 360/lower
-            total_satellites = lower*self.num_streets
+            true_spacing = 360 / lower
+            total_satellites = lower * self.num_streets
             return total_satellites, lower, true_spacing
         else:
-            true_spacing = 360/upper
-            total_satellites = upper*self.num_streets
+            true_spacing = 360 / upper
+            total_satellites = upper * self.num_streets
             return total_satellites, upper, true_spacing
 
     def __calculate_ta(self):
-        phase = 360/self.num_sats
+        phase = 360 / self.num_sats
         ta = [0] * self.num_sats
         for i in range(self.num_streets):
             for j in range(self.sats_per_street):
-                ta[i*self.sats_per_street + j] = i*phase
+                ta[i * self.sats_per_street + j] = i * phase
         return ta
 
     def __perigee_positions(self):
-        perigees = list(range(0, 360, int(360/self.sats_per_street)))
+        perigees = list(range(0, 360, int(360 / self.sats_per_street)))
         all_perigees = []
         for i in range(self.num_sats):
             all_perigees.extend(perigees)
@@ -231,11 +183,12 @@ class SOCConstellation: #Needs to be cleaned up
                 sat_num = i * self.sats_per_street + j + self.start_num + 1
                 sat_name = self.constellation_name + " " + str(sat_num)
                 satellites.append(Satellite(sat_name, self.altitude, self.eccentricity, self.inclination, self.raan[i],
-                                            self.perigee_positions[j], self.ta[i*self.sats_per_street+j], self.beam, focus=self.focus,rads = False))
+                                            self.perigee_positions[j], self.ta[i * self.sats_per_street + j], self.beam,
+                                            focus=self.focus, rads=False))
         return satellites
 
     def __calculate_longitudinal_drift(self):
-        drift = self.orbital_period*constants["wE"]*180/math.pi
+        drift = self.orbital_period * constants["wE"] * 180 / math.pi
         return drift
 
     def __repr__(self):
@@ -258,3 +211,61 @@ class SOCConstellation: #Needs to be cleaned up
                 constellation[sat.name] = sat.as_dict()
         constellation['Type'] = 'Streets'
         return constellation
+
+
+class FlowerConstellation:
+
+    def __init__(self, num_satellites, orbit_period, altitude, inclination, perigee_argument, raan, num_petals,
+                 satellites_per_petal, repeat_days, focus='earth'):
+        self.num_satellites = num_satellites
+        self.raan = raan
+        self.num_petals = num_petals
+        self.repeat_days = repeat_days
+        self.orbit_period = orbit_period
+        self.altitude = altitude
+        self.inclination = inclination
+        self.perigee_argument = perigee_argument
+        self.focus = focus
+        self.semi_major, self.eccentricity = self.__calculate_orbit_params()
+        self.mean_motion, self.RAAN_rate, self.mean_anomaly_rate = self.__calculate_mean_anomaly_rate()
+        self.__calculate_multiple_orbits()
+        self.__calculate_single_orbits()
+
+    def __calculate_orbit_params(self):
+        # semi_major = math.pow(constants['G']*heavenly_body_mass[self.focus]*math.pow(self.orbit_period/(2*math.pi),2),1/3)
+        semi_major = math.pow(
+            constants['G'] * heavenly_body_mass[self.focus] * math.pow(self.orbit_period / (2 * math.pi), 2), 1 / 3)
+        eccentricity = 1 - (heavenly_body_radius[self.focus] + self.altitude) / (semi_major * 10 ** -3)
+        return semi_major, eccentricity
+
+    def __calculate_mean_anomaly_rate(self):
+        semi_parameter = (self.semi_major * 10 ** (-3)) * (1 - self.eccentricity ** 2)
+        psi = 3 * heavenly_body_radius[self.focus] ** 2 * constants["J2E"] / (4 * semi_parameter ** 2)
+        mean_motion = (2 * math.pi) / self.orbit_period
+        mean_anomaly_rate = -1 * psi * mean_motion * math.sqrt(1 - self.eccentricity ** 2) * (
+                    3 * math.pow(math.sin(self.inclination * math.pi / 180), 2) - 2)
+        RAAN_rate = -2 * psi * mean_motion * math.cos(self.inclination * math.pi / 180)
+        return mean_motion, RAAN_rate, mean_anomaly_rate
+
+    def __calculate_multiple_orbits(self):
+        M = [0]
+        v = [0]
+        for idx in range(1, self.num_petals):
+            Mi = M[idx - 1] + (self.mean_motion + self.mean_anomaly_rate) * (self.raan[idx - 1] - self.raan[idx]) / (
+                        constants["wE"] + self.RAAN_rate)
+            M.append(Mi)
+            vi = Mi + (2 * self.eccentricity - 0.25 * math.pow(self.eccentricity, 3)) * math.sin(Mi * math.pi / 180)
+            v.append(vi)
+            print(Mi * 180 / math.pi, vi * 180 / math.pi)
+            # print(Mi,vi)
+
+    def __calculate_single_orbits(self):
+        M = [0]
+        v = [0]
+        for idx in range(1, self.repeat_days - 1):
+            Mi = M[idx - 1] + 2 * math.pi * (self.mean_motion + self.mean_anomaly_rate) / (
+                        constants["wE"] + self.RAAN_rate)
+            M.append(Mi)
+            vi = Mi + (2 * self.eccentricity - 0.25 * math.pow(self.eccentricity, 3)) * math.sin(Mi * math.pi / 180)
+            v.append(vi)
+            print(Mi * 180 / math.pi, vi * 180 / math.pi)
