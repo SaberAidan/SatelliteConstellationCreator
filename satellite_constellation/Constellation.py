@@ -3,13 +3,76 @@ Class for holding Constellations of Satellites within it.
 """
 from .Satellite import Satellite
 from .utils import *
+from scipy import optimize
 import warnings
 import math
 
 
-class WalkerConstellation:
+class Constellation:
+
     """
-    Class for describing and holding a constellation of satellites
+    Class to implement a layer of abstraction for satellite constellations
+    Contains parameters general to all types of satellites
+
+    :param num_satellites: Number of satellites used in the constellation
+    :param orbital_period: Orbital period of the satellites
+    :param altitude: altitude of the satellites
+    :param beam_width: Sensor beam width of the satellites
+    :param eccentricity: Eccentricity of satellite orbits
+    :param focus: Heavenly body at the focus of the orbit, defaults to 'Earth'
+    """
+
+    def __init__(self, num_satellites, orbital_period, altitude, beam_width, eccentricity ,focus = 'Earth'):
+        self.num_satellites = num_satellites
+        self.orbital_period = orbital_period
+        self.altitude = altitude
+        self.beam_width = beam_width
+        self.eccentricity = eccentricity
+        self.focus = focus
+        self.satellites = []
+
+
+    def __str__(self):
+        sat_string = ""
+        for sat in self.satellites:
+            sat_string += sat.__str__() + '\n'
+
+        return sat_string.rstrip()
+
+    def as_dict(self):
+        constellation = {}
+        for sat in self.satellites:
+            if sat.name not in constellation:
+                constellation[sat.name] = sat.as_dict()
+        constellation['Type'] = 'constellation'
+        return constellation
+
+    def as_xml(self):
+        warnings.warn("XML support is depreciated and not supported from PIGI 0.8.5 onward", DeprecationWarning)
+        return self.as_pigi_output()
+
+    def as_pigi_output(self):
+        short_scene = ""
+        for sat in self.satellites:
+            short_scene += sat.as_xml()
+
+        return short_scene
+
+
+class WalkerConstellation(Constellation):
+
+    """
+    Class for describing and holding a walker constellation of satellites
+
+    :param num_sats: Number of satellites used in the constellation "t"
+    :param num_planes: The number of different orbit planes in the constellation "p"
+    :param phasing: Dictates the spacing between equivalent satellites in neighbouring orbital planes "f"
+    :param inclination: Inclination of orbit relative to equatorial plane "i"
+    :param altitude: Altitude of satellites in orbit
+    :param eccentricity: Eccentricity of satellite orbits
+    :param beam_width: Sensor beam width of the satellites
+    :param name: Name of constellation, defaults to "Sat"
+    :param focus: Heavenly body at the focus of the orbit, defaults to 'Earth'
     """
 
     def __init__(self, num_sats, num_planes, phasing, inclination, altitude,
@@ -19,8 +82,8 @@ class WalkerConstellation:
         self.phasing = phasing
         self.inclination = inclination
         self.altitude = altitude
-        self.e = eccentricity
-        self.beam = beam_width
+        self.eccentricity = eccentricity
+        self.beam_width = beam_width
         self.start_num = starting_number
         self.constellation_name = name
         self.focus = focus
@@ -59,46 +122,36 @@ class WalkerConstellation:
         for i in range(self.num_sats):
             sat_num = i + self.start_num + 1
             sat_name = self.constellation_name + " " + str(sat_num)
-            satellites.append(Satellite(sat_name, self.altitude, self.e, self.inclination, self.raan[i],
-                                        self.perigee_positions[i], self.ta[i], self.beam, focus=self.focus, rads=False))
+            satellites.append(Satellite(sat_name, self.altitude, self.eccentricity, self.inclination, self.raan[i],
+                                        self.perigee_positions[i], self.ta[i], self.beam_width, focus=self.focus, rads=False))
         return satellites
 
     def __repr__(self):
         return "{0}, {1}, {2}, {3}, {4}, {5}, {6}, name={7}, starting_number={8}".format(self.num_sats, self.num_planes,
                                                                                          self.phasing, self.inclination,
-                                                                                         self.altitude, self.e,
-                                                                                         self.beam,
+                                                                                         self.altitude, self.eccentricity,
+                                                                                         self.beam_width,
                                                                                          self.constellation_name,
                                                                                          self.start_num)
 
-    def __str__(self):
-        sat_string = ""
-        for sat in self.satellites:
-            sat_string += sat.__str__() + '\n'
 
-        return sat_string.rstrip()
+class SOCConstellation(Constellation):  # Needs to be cleaned up
 
-    def as_dict(self):
-        constellation = {}
-        for sat in self.satellites:
-            if sat.name not in constellation:
-                constellation[sat.name] = sat.as_dict()
-        constellation['Type'] = 'constellation'
-        return constellation
+    """
+    Class for describing and holding a walker constellation of satellites
 
-    def as_xml(self):
-        warnings.warn("XML support is depreciated and not supported from PIGI 0.8.5 onward", DeprecationWarning)
-        return self.as_pigi_output()
-
-    def as_pigi_output(self):
-        short_scene = ""
-        for sat in self.satellites:
-            short_scene += sat.as_xml()
-
-        return short_scene
+    :param num_streets: Number of satellites used in the constellation
+    :param street_width: Angular width of street
+    :param altitude: Altitude of satellites in orbit
+    :param beam_width: Sensor beam width of the satellites
+    :param raan: List of right ascension for each street
+    :param eccentricity: Eccentricity of satellite orbits
+    :param revisit_time: Time until latitude re-enters satellite coverage
+    :param name: Name of constellation, defaults to "Sat"
+    :param focus: Heavenly body at the focus of the orbit, defaults to 'Earth'
+    """
 
 
-class SOCConstellation:  # Needs to be cleaned up
     def __init__(self, num_streets, street_width, altitude, beam_width, raan, eccentricity, revisit_time, name="Sat",
                  focus="earth", starting_number=0):  # Start off with just a single polar orbit
         self.inclination = 90  # Polar Orbit
@@ -197,23 +250,8 @@ class SOCConstellation:  # Needs to be cleaned up
                                                 self.beam,
                                                 self.constellation_name)
 
-    def __str__(self):
-        sat_string = ""
-        for sat in self.satellites:
-            sat_string += sat.__str__() + '\n'
 
-        return sat_string.rstrip()
-
-    def as_dict(self):
-        constellation = {}
-        for sat in self.satellites:
-            if sat.name not in constellation:
-                constellation[sat.name] = sat.as_dict()
-        constellation['Type'] = 'Streets'
-        return constellation
-
-
-class FlowerConstellation:
+class FlowerConstellation(Constellation):
 
     def __init__(self, num_satellites, orbit_period, altitude, inclination, perigee_argument, raan, num_petals,
                  satellites_per_petal, repeat_days, focus='earth'):
@@ -269,3 +307,20 @@ class FlowerConstellation:
             vi = Mi + (2 * self.eccentricity - 0.25 * math.pow(self.eccentricity, 3)) * math.sin(Mi * math.pi / 180)
             v.append(vi)
             print(Mi * 180 / math.pi, vi * 180 / math.pi)
+
+
+class FlowerDummy():
+    def __init__(self, num_petals, ground_track_repeat, num_satellites, phasing_n, phasing_p, perigee_argument,
+                 inclination, perigee_altitude):
+        self.num_petals = num_petals
+        self.ground_track_repeat = ground_track_repeat
+        self.num_satellites = num_satellites
+        self.phasing_n = phasing_n
+        self.phasing_p = phasing_p
+        self.perigee_argument = perigee_argument
+        self.inclination = inclination
+        self.perigee_altitude = perigee_altitude
+
+    def equations(p):
+        x, y = p
+        return (y - x ** 2 - 7 + 5 * x, 4 * y - 8 * x + 21)
