@@ -1,18 +1,36 @@
 import unittest
 from satellite_constellation.Satellite import Satellite
-from satellite_constellation.Constellation import SOCConstellation, Constellation
+from satellite_constellation.Constellation import *
 from satellite_constellation.ConstellationExceptions import *
-from satellite_constellation.SceneCreator import constellation_creator
+from satellite_constellation.SceneCreator import *
 import math
-import warnings
+
+
+class TestDummy(unittest.TestCase):
+    flower_dummy = FlowerConstellation(3, 1, 4, 1, 7, 10, 10, 600)
+
+    print(flower_dummy.representation(), flower_dummy.representation(representation_type="walker"))
+    print("Np : {0}, Nd : {1}, Ns : {2} , Fn : {3}, Fd : {4}".format(flower_dummy.num_petals,
+                                                                     flower_dummy.num_days,
+                                                                     flower_dummy.num_satellites,
+                                                                     flower_dummy.phasing_n,
+                                                                     flower_dummy.phasing_d))
+    print("Max sats per obit : {0}, Max sats : {1}, Num orbits : {2}, Num sats : {3}".format(
+        flower_dummy.max_sats_per_orbit,
+        flower_dummy.max_sats,
+        flower_dummy.num_orbits,
+        flower_dummy.num_satellites))
+
+    print("RAAN spacing : {0}, Mean Anomaly Spacing : {1}".format(flower_dummy.raan_spacing,
+                                                                  flower_dummy.mean_anomaly_spacing))
+
+    print("RAAN : ", flower_dummy.raan)
+    print("Mean Anomaly : ", flower_dummy.mean_anomaly)
+    print("Revisit Time : {0}, Minimum Revisit Time : {1}".format(flower_dummy.revisit_time,
+                                                                  flower_dummy.minimum_revisit_time))
 
 
 class TestConstellationCreator(unittest.TestCase):  # Test for errors in the constellation creator
-
-    # def setUp(self):
-    # testCons = SOCConstellation(1, 10, 1500, 60, [20], 0.8, 100)
-    # self.satellite = Satellite( "temp", 1000, 0, 10, 20, 30, 40, 50, focus="earth", rads=True)
-    # self.constellation = constellation_creator(1, [18], [3], [1], [30], [1000], [0], [20])
 
     def test_0_constellations(self):  # Check for number error with 0 constellations
         constellation_num = 0
@@ -77,11 +95,6 @@ class TestConstellationCreator(unittest.TestCase):  # Test for errors in the con
         with self.assertRaises(BeamError):  # Beam width = 0
             constellation = constellation_creator(1, [T], [P], [F], [30], [1000], [0.5], [beam_width])
 
-    def test_focus(self):
-        T, P, F = 2, 2, 1
-        with self.assertRaises(FocusError):  # Beam width > 180
-            constellation = constellation_creator(1, [T], [P], [F], [30], [1000], [0.5], [50], focus="notafocus")
-
 
 class TestSatellite(unittest.TestCase):
 
@@ -109,7 +122,7 @@ class TestSatellite(unittest.TestCase):
 class TestWalker(unittest.TestCase):
 
     def setUp(self):
-        self.walker_constellation = Constellation(18, 3, 1, 30, 1000, 0, 20)
+        self.walker_constellation = WalkerConstellation(18, 3, 1, 30, 1000, 0, 20)
 
     def test_sats_per_plane(self):
         self.assertEqual(6, self.walker_constellation.sats_per_plane)

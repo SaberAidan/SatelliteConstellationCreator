@@ -270,6 +270,8 @@ class FlowerConstellation():
         self.num_orbits = self.__calculate_num_orbits()
         self.raan, self.mean_anomaly = self.__calculate_orbits()
         self.revisit_time = self.__calculate_revisit_time()
+        self.minimum_revisit_time = self.__calculate_minimum_revisit_time()
+
 
         # print(self.equations(self.solve()))
         # T, e, a = self.__calculate_orbit_params()
@@ -345,14 +347,19 @@ class FlowerConstellation():
         return T, e, a
 
     def __calculate_revisit_time(self):
-        return (self.num_days/self.num_satellites)*24*60*60
+        revisit_time = self.num_days/self.num_satellites
+        return revisit_time
 
-    def representation(self, metric = "flower"):
-        if metric == "flower":
+    def __calculate_minimum_revisit_time(self):
+        min_revisit_time = self.num_days/self.max_sats
+        return min_revisit_time
+
+    def representation(self, representation_type = "flower"):
+        if representation_type == "flower":
             i = self.inclination
             return "{0}-{1}-{2}-{3}-{4} Flower".format(self.num_petals, self.num_days, self.num_satellites, self.phasing_n,
                                                    self.phasing_d)
-        elif metric == "walker":
+        elif representation_type == "walker":
             i = self.inclination
             No = self.phasing_d
             G = self.phasing_d*self.num_days/self.max_sats
