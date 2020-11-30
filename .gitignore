@@ -1,5 +1,7 @@
 # IDE files
 .idea/
+venv/
+*__pycache__*
 
 # dist files
 dist/

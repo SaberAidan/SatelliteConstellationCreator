@@ -22,7 +22,8 @@ class Constellation:
     :param focus: Heavenly body at the focus of the orbit, defaults to 'Earth'
     """
 
-    def __init__(self, num_satellites, orbital_period, altitude, beam_width, eccentricity ,focus = 'Earth'):
+    def __init__(self, num_satellites, orbital_period, altitude, beam_width, eccentricity,
+                 focus='Earth'):
         self.num_satellites = num_satellites
         self.orbital_period = orbital_period
         self.altitude = altitude
@@ -30,7 +31,6 @@ class Constellation:
         self.eccentricity = eccentricity
         self.focus = focus
         self.satellites = []
-
 
     def __str__(self):
         sat_string = ""
@@ -48,7 +48,8 @@ class Constellation:
         return constellation
 
     def as_xml(self):
-        warnings.warn("XML support is depreciated and not supported from PIGI 0.8.5 onward", DeprecationWarning)
+        warnings.warn("XML support is depreciated and not supported from PIGI 0.8.5 onward",
+                      DeprecationWarning)
         return self.as_pigi_output()
 
     def as_pigi_output(self):
@@ -66,7 +67,8 @@ class WalkerConstellation(Constellation):
 
     :param num_sats: Number of satellites used in the constellation "t"
     :param num_planes: The number of different orbit planes in the constellation "p"
-    :param phasing: Dictates the spacing between equivalent satellites in neighbouring orbital planes "f"
+    :param phasing: Dictates the spacing between equivalent satellites in neighbouring orbital
+                    planes "f"
     :param inclination: Inclination of orbit relative to equatorial plane "i"
     :param altitude: Altitude of satellites in orbit
     :param eccentricity: Eccentricity of satellite orbits
@@ -150,7 +152,6 @@ class SOCConstellation(Constellation):  # Needs to be cleaned up
     :param name: Name of constellation, defaults to "Sat"
     :param focus: Heavenly body at the focus of the orbit, defaults to 'Earth'
     """
-
 
     def __init__(self, num_streets, street_width, altitude, beam_width, raan, eccentricity, revisit_time, name="Sat",
                  focus="earth", starting_number=0):  # Start off with just a single polar orbit

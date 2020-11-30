@@ -1,3 +1,5 @@
+from __init__ import add_parent_directory  # Needed for running tests in pipelines
+add_parent_directory()
 import unittest
 from satellite_constellation.Satellite import Satellite
 from satellite_constellation.Constellation import SOCConstellation, Constellation
@@ -80,7 +82,8 @@ class TestConstellationCreator(unittest.TestCase):  # Test for errors in the con
     def test_focus(self):
         T, P, F = 2, 2, 1
         with self.assertRaises(FocusError):  # Beam width > 180
-            constellation = constellation_creator(1, [T], [P], [F], [30], [1000], [0.5], [50], focus="notafocus")
+            constellation = constellation_creator(1, [T], [P], [F], [30], [1000], [0.5], [50],
+                                                  focus="notafocus")
 
 
 class TestSatellite(unittest.TestCase):
