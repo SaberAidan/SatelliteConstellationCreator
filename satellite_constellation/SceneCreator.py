@@ -3,7 +3,7 @@ Recreation of the Octave SceneCreator script for use within Flask or other pytho
 @creator: Aidan O'Brien
 """
 
-from .Constellation import Constellation, SOCConstellation
+from .Constellation import WalkerConstellation, SOCConstellation
 from .GroundStation import GroundStation
 from itertools import zip_longest
 import warnings
@@ -88,89 +88,7 @@ def scene_xml_generator(scene):
 
     return "{0} {1} {2}".format(scene_start, scene_xml, scene_end)
 
-def constellation_creator_general(num_constellations,constellation_types, constellation_vars):
 
-    """
-    :param num_constellations: Integer of the number of constellations that are for the scene
-    :param constellation_types: List of types of constellation, i.e. "walker", "streets" or "flower"
-    :param constellation_vars: List of dicts of constellation parameters
-
-    """
-    scene = []
-
-    for idx in range(num_constellations):
-
-        vars = constellation_vars[idx]
-
-        if constellation_types[idx] == "walker":
-
-            if not single_walker_errors(vars["satellite_nums"], vars["satellite_planes"], vars["plane_phasing"],
-
-                             vars["inclination"], vars["altitude"], vars["eccentricity"], vars['constellation_beam_width'],
-                             vars["focus"]):
-
-                test_constellation = Constellation(vars["satellite_nums"],vars["satellite_planes"], vars["plane_phasing"],vars["inclination"],
-                                                  vars["altitude"], vars["eccentricity"], vars['constellation_beam_width'], vars["focus"])
-
-        elif constellation_types[idx] == "streets":
-
-            temp_constellation = SOCConstellation(vars["num_streets"], vars["street_width"], vars["altitude"],
-                             vars["beam_width"], vars["raan"], vars["eccentricity"], vars['revisit_time'], vars["focus"])
-
-def single_walker_errors( satellite_nums, satellite_planes, plane_phasing, inclination, altitude, eccentricity,
-                  constellation_beam_width, sat_name="Sat", focus="earth"):
-
-    error_found = False
-
-    if satellite_nums%satellite_planes:
-        error_found = True
-        raise ConstellationPlaneMismatchError("Number of satellites not compatible with planes in constellation")
-
-    if plane_phasing < 0:
-        error_found = True
-        raise PhaseError("Negative number of phases not allowed")
-    # elif phase >= satellite_planes[idx]:
-    #     raise PhaseError("Number of phases in constellation larger than number of planes")
-    # elif (satellite_nums[idx] % phase) != 0:
-    #     raise PhaseError("Number of satellites must be divisible by the number of phases")
-    elif plane_phasing % 1:
-        error_found = True
-        raise PhaseError("Number of phases not an integer")
-    elif plane_phasing % satellite_planes == 0:
-        error_found = True
-        raise PhaseError("Phase cannot equal number of planes times a constant")
-
-    if abs(inclination) > 90:
-        error_found = True
-        raise InclinationError("Inclination greater than 90 degrees from equitorial orbit")
-        #Could implement wrap around of angles here
-
-    if altitude < 0:
-        error_found = True
-        raise AltitudeError("Negative altitude not allowed")
-    elif (altitude < 100):
-        error_found = True
-        raise AltitudeError("Altitude below Karman line")
-
-    if (eccentricity < 0):
-        error_found = True
-        raise EccentricityError("Invalid eccentricity. Eccentricity cannot be less than 0")
-    elif (eccentricity >= 1):
-        error_found = True
-        raise EccentricityError("Invalid eccentricity. Hyperbolic trajectories not allowed")
-
-    if constellation_beam_width <= 0 or constellation_beam_width > 180:
-        error_found = True
-        raise BeamError("Beam width error. Must be within 0 to 180 degrees")
-
-    if focus.lower() not in heavenly_body_radius:
-        error_found = True
-        raise FocusError("'" + focus.capitalize() + "' not supported as a celestial body origin.")
-
-    if error_found:
-        return True
-    else:
-        return False
 
 def constellation_creator(num_constellations, satellite_nums, satellite_planes, plane_phasing, inclination, altitude,
                           eccentricity, constellation_beam_width, sat_name="Sat", focus="earth"):
@@ -201,7 +119,7 @@ def constellation_creator(num_constellations, satellite_nums, satellite_planes, 
     scene = []
     for idx in range(num_constellations):
         start_num = sum(satellite_nums[0:idx])
-        scene.append(Constellation(satellite_nums[idx], satellite_planes[idx], plane_phasing[idx], inclination[idx],
+        scene.append(WalkerConstellation(satellite_nums[idx], satellite_planes[idx], plane_phasing[idx], inclination[idx],
                                    altitude[idx], eccentricity[idx], constellation_beam_width[idx], name=sat_name,
                                    starting_number=start_num, focus=focus))
 
