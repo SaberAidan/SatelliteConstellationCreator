@@ -3,13 +3,12 @@ Recreation of the Octave SceneCreator script for use within Flask or other pytho
 @creator: Aidan O'Brien
 """
 
-from .Constellation import Constellation
+from .Constellation import WalkerConstellation, SOCConstellation
 from .GroundStation import GroundStation
 from itertools import zip_longest
 import warnings
 from .utils import mod, heavenly_body_radius
 from .ConstellationExceptions import *
-
 
 def scene_xml_generator(scene):
     warnings.warn("XML support is depreciated and not supported from PIGI 0.8.5 onward", DeprecationWarning)
@@ -90,9 +89,16 @@ def scene_xml_generator(scene):
     return "{0} {1} {2}".format(scene_start, scene_xml, scene_end)
 
 
+
 def constellation_creator(num_constellations, satellite_nums, satellite_planes, plane_phasing, inclination, altitude,
                           eccentricity, constellation_beam_width, sat_name="Sat", focus="earth"):
     """
+
+    Need to add the streets of coverage method to the scene creator
+    Change this to use 3 param
+    Number of constellations
+    List of constellation types
+    List of dict with constellation vars, dict change with different type
 
     :param num_constellations: Integer of the number of constellations that are for the scene
     :param satellite_nums: List of numbers of satellites for each constellation
@@ -107,49 +113,17 @@ def constellation_creator(num_constellations, satellite_nums, satellite_planes, 
     :return: Returns a list of constellations that have been formatted
     """
 
-    if num_constellations < 1 or (num_constellations % 1):
-        raise ConstellationNumberError("Invalid integer number of constellations")
-
-    if num_constellations != len(satellite_nums):
-        raise ConstellationConfigurationError("Number of constellations does not match number of satellites provided")
-
-    if any(mod(satellite_nums, satellite_planes)):
-        raise ConstellationPlaneMismatchError("Number of satellites not compatible with planes in constellation")
-
-    for idx, phase in enumerate(plane_phasing):
-        if phase < 0:
-            raise PhaseError("Negative number of phases not allowed")
-        # elif phase >= satellite_planes[idx]:
-        #     raise PhaseError("Number of phases in constellation larger than number of planes")
-        elif (satellite_nums[idx] % phase) != 0:
-            raise PhaseError("Number of satellites must be divisible by the number of phases")
-        elif phase % 1:
-            raise PhaseError("Number of phases not an integer")
-
-    if any(abs(x) > 90 for x in inclination):
-        raise InclinationError("Inclination greater than 90 degrees from equitorial orbit")
-
-    if any(x < 0 for x in altitude):
-        raise AltitudeError("Negative altitude not allowed")
-
-    if any(x < 0 or x >= 1 for x in eccentricity):
-        raise EccentricityError("Invalid eccentricity. Hyperbolic trajectories not allowed")
-
-    if any(x < 0 or x > 180 for x in constellation_beam_width):
-        raise BeamError("Beam width error. Must be within 0 to 180 degrees")
-
-    if focus.lower() not in heavenly_body_radius:
-        raise FocusError("'" + focus.capitalize() + "' not supported as a celestial body origin.")
+    walker_errors(num_constellations, satellite_nums, satellite_planes, plane_phasing, inclination, altitude,
+                          eccentricity, constellation_beam_width,focus = "earth")
 
     scene = []
     for idx in range(num_constellations):
         start_num = sum(satellite_nums[0:idx])
-        scene.append(Constellation(satellite_nums[idx], satellite_planes[idx], plane_phasing[idx], inclination[idx],
+        scene.append(WalkerConstellation(satellite_nums[idx], satellite_planes[idx], plane_phasing[idx], inclination[idx],
                                    altitude[idx], eccentricity[idx], constellation_beam_width[idx], name=sat_name,
                                    starting_number=start_num, focus=focus))
 
     return scene
-
 
 def ground_array_creator(num_ground_stations, latitudes, longitudes, elevations, beam_widths, name="GS"):
     """
@@ -188,6 +162,69 @@ def ground_array_creator(num_ground_stations, latitudes, longitudes, elevations,
 
     return scene
 
+def walker_errors(num_constellations, satellite_nums, satellite_planes, plane_phasing, inclination, altitude, eccentricity,
+                  constellation_beam_width, sat_name="Sat", focus="earth"):
+
+    error_found = False
+
+    if num_constellations < 1 or (num_constellations % 1):
+        error_found = True
+        raise ConstellationNumberError("Invalid integer number of constellations")
+
+    if num_constellations != len(satellite_nums):
+        error_found = True
+        raise ConstellationConfigurationError("Number of constellations does not match number of satellites provided")
+
+    if any(mod(satellite_nums, satellite_planes)):
+        error_found = True
+        raise ConstellationPlaneMismatchError("Number of satellites not compatible with planes in constellation")
+
+    for idx, phase in enumerate(plane_phasing):
+        if phase < 0:
+            error_found = True
+            raise PhaseError("Negative number of phases not allowed")
+        # elif phase >= satellite_planes[idx]:
+        #     raise PhaseError("Number of phases in constellation larger than number of planes")
+        # elif (satellite_nums[idx] % phase) != 0:
+        #     raise PhaseError("Number of satellites must be divisible by the number of phases")
+        elif phase % 1:
+            error_found = True
+            raise PhaseError("Number of phases not an integer")
+        elif phase % satellite_planes[idx] == 0:
+            error_found = True
+            raise PhaseError("Phase cannot equal number of planes times a constant")
+
+    if any(abs(x) > 90 for x in inclination):
+        error_found = True
+        raise InclinationError("Inclination greater than 90 degrees from equitorial orbit")
+        #Could implement wrap around of angles here
+
+    if any(x < 0 for x in altitude):
+        error_found = True
+        raise AltitudeError("Negative altitude not allowed")
+    elif any(x < 100 for x in altitude):
+        error_found = True
+        raise AltitudeError("Altitude below Karman line")
+
+    if any(x < 0 for x in eccentricity):
+        error_found = True
+        raise EccentricityError("Invalid eccentricity. Eccentricity cannot be less than 0")
+    elif any(x >= 1 for x in eccentricity):
+        error_found = True
+        raise EccentricityError("Invalid eccentricity. Hyperbolic trajectories not allowed")
+
+    if any(x <= 0 or x > 180 for x in constellation_beam_width):
+        error_found = True
+        raise BeamError("Beam width error. Must be within 0 to 180 degrees")
+
+    if focus.lower() not in heavenly_body_radius:
+        error_found = True
+        raise FocusError("'" + focus.capitalize() + "' not supported as a celestial body origin.")
+
+    if error_found:
+        return True
+    else:
+        return False
 
 def create_scene(num_constellations, num_sats, sat_planes, plane_phasing, sat_inclination, sat_alt,
                  sat_eccentricity, const_beam_width,

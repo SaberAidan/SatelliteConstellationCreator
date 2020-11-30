@@ -1,7 +1,7 @@
 """
 
 """
-
+import math
 
 def mod(x, y):
     """
@@ -26,3 +26,20 @@ heavenly_body_radius = {
     "neptune": 24622,
     "pluto": 1188,
 }
+
+heavenly_body_mass = {
+    "earth": 5.972*10**24, # [kg]
+}
+
+constants = {
+    "G" : 6.67408*10**(-11), # Gravitational constant [m^3 kg^-1 s^-2]
+    "wE" : 7.2921159*10**(-5), # Earth angular velocity [rad/s]
+    "J2E" : 10826269*10**(-3), # Earth J2 constant
+}
+
+def proper_round(num, dec=0):  # Add exception check for no decimal point found
+
+    num = str(num)[:str(num).index('.')+dec+2]
+    if num[-1]>='5':
+        return float(num[:-2-(not dec)]+str(int(num[-2-(not dec)])+1))
+    return float(num[:-1])
