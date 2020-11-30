@@ -6,10 +6,10 @@ from .utils import *
 from scipy import optimize
 import warnings
 import math
+import numpy as np
 
 
 class Constellation:
-
     """
     Class to implement a layer of abstraction for satellite constellations
     Contains parameters general to all types of satellites
@@ -22,7 +22,7 @@ class Constellation:
     :param focus: Heavenly body at the focus of the orbit, defaults to 'Earth'
     """
 
-    def __init__(self, num_satellites, orbital_period, altitude, beam_width, eccentricity ,focus = 'Earth'):
+    def __init__(self, num_satellites, orbital_period, altitude, beam_width, eccentricity, focus='Earth'):
         self.num_satellites = num_satellites
         self.orbital_period = orbital_period
         self.altitude = altitude
@@ -30,7 +30,6 @@ class Constellation:
         self.eccentricity = eccentricity
         self.focus = focus
         self.satellites = []
-
 
     def __str__(self):
         sat_string = ""
@@ -60,7 +59,6 @@ class Constellation:
 
 
 class WalkerConstellation(Constellation):
-
     """
     Class for describing and holding a walker constellation of satellites
 
@@ -123,16 +121,21 @@ class WalkerConstellation(Constellation):
             sat_num = i + self.start_num + 1
             sat_name = self.constellation_name + " " + str(sat_num)
             satellites.append(Satellite(sat_name, self.altitude, self.eccentricity, self.inclination, self.raan[i],
-                                        self.perigee_positions[i], self.ta[i], self.beam_width, focus=self.focus, rads=False))
+                                        self.perigee_positions[i], self.ta[i], self.beam_width, focus=self.focus,
+                                        rads=False))
         return satellites
 
     def __repr__(self):
         return "{0}, {1}, {2}, {3}, {4}, {5}, {6}, name={7}, starting_number={8}".format(self.num_sats, self.num_planes,
                                                                                          self.phasing, self.inclination,
-                                                                                         self.altitude, self.eccentricity,
+                                                                                         self.altitude,
+                                                                                         self.eccentricity,
                                                                                          self.beam_width,
                                                                                          self.constellation_name,
                                                                                          self.start_num)
+
+    def representation(self):
+        return "{0}:{1}/{2}/{3} Walker".format(self.inclination, self.num_sats, self.num_planes, self.phasing)
 
 
 class SOCConstellation(Constellation):  # Needs to be cleaned up
@@ -150,7 +153,6 @@ class SOCConstellation(Constellation):  # Needs to be cleaned up
     :param name: Name of constellation, defaults to "Sat"
     :param focus: Heavenly body at the focus of the orbit, defaults to 'Earth'
     """
-
 
     def __init__(self, num_streets, street_width, altitude, beam_width, raan, eccentricity, revisit_time, name="Sat",
                  focus="earth", starting_number=0):  # Start off with just a single polar orbit
@@ -251,76 +253,114 @@ class SOCConstellation(Constellation):  # Needs to be cleaned up
                                                 self.constellation_name)
 
 
-class FlowerConstellation(Constellation):
-
-    def __init__(self, num_satellites, orbit_period, altitude, inclination, perigee_argument, raan, num_petals,
-                 satellites_per_petal, repeat_days, focus='earth'):
-        self.num_satellites = num_satellites
-        self.raan = raan
+class FlowerConstellation():
+    def __init__(self, num_petals, num_days, num_satellites, phasing_n, phasing_d, perigee_argument,
+                 inclination, perigee_altitude, focus='earth'):
         self.num_petals = num_petals
-        self.repeat_days = repeat_days
-        self.orbit_period = orbit_period
-        self.altitude = altitude
-        self.inclination = inclination
-        self.perigee_argument = perigee_argument
-        self.focus = focus
-        self.semi_major, self.eccentricity = self.__calculate_orbit_params()
-        self.mean_motion, self.RAAN_rate, self.mean_anomaly_rate = self.__calculate_mean_anomaly_rate()
-        self.__calculate_multiple_orbits()
-        self.__calculate_single_orbits()
-
-    def __calculate_orbit_params(self):
-        # semi_major = math.pow(constants['G']*heavenly_body_mass[self.focus]*math.pow(self.orbit_period/(2*math.pi),2),1/3)
-        semi_major = math.pow(
-            constants['G'] * heavenly_body_mass[self.focus] * math.pow(self.orbit_period / (2 * math.pi), 2), 1 / 3)
-        eccentricity = 1 - (heavenly_body_radius[self.focus] + self.altitude) / (semi_major * 10 ** -3)
-        return semi_major, eccentricity
-
-    def __calculate_mean_anomaly_rate(self):
-        semi_parameter = (self.semi_major * 10 ** (-3)) * (1 - self.eccentricity ** 2)
-        psi = 3 * heavenly_body_radius[self.focus] ** 2 * constants["J2E"] / (4 * semi_parameter ** 2)
-        mean_motion = (2 * math.pi) / self.orbit_period
-        mean_anomaly_rate = -1 * psi * mean_motion * math.sqrt(1 - self.eccentricity ** 2) * (
-                    3 * math.pow(math.sin(self.inclination * math.pi / 180), 2) - 2)
-        RAAN_rate = -2 * psi * mean_motion * math.cos(self.inclination * math.pi / 180)
-        return mean_motion, RAAN_rate, mean_anomaly_rate
-
-    def __calculate_multiple_orbits(self):
-        M = [0]
-        v = [0]
-        for idx in range(1, self.num_petals):
-            Mi = M[idx - 1] + (self.mean_motion + self.mean_anomaly_rate) * (self.raan[idx - 1] - self.raan[idx]) / (
-                        constants["wE"] + self.RAAN_rate)
-            M.append(Mi)
-            vi = Mi + (2 * self.eccentricity - 0.25 * math.pow(self.eccentricity, 3)) * math.sin(Mi * math.pi / 180)
-            v.append(vi)
-            print(Mi * 180 / math.pi, vi * 180 / math.pi)
-            # print(Mi,vi)
-
-    def __calculate_single_orbits(self):
-        M = [0]
-        v = [0]
-        for idx in range(1, self.repeat_days - 1):
-            Mi = M[idx - 1] + 2 * math.pi * (self.mean_motion + self.mean_anomaly_rate) / (
-                        constants["wE"] + self.RAAN_rate)
-            M.append(Mi)
-            vi = Mi + (2 * self.eccentricity - 0.25 * math.pow(self.eccentricity, 3)) * math.sin(Mi * math.pi / 180)
-            v.append(vi)
-            print(Mi * 180 / math.pi, vi * 180 / math.pi)
-
-
-class FlowerDummy():
-    def __init__(self, num_petals, ground_track_repeat, num_satellites, phasing_n, phasing_p, perigee_argument,
-                 inclination, perigee_altitude):
-        self.num_petals = num_petals
-        self.ground_track_repeat = ground_track_repeat
+        self.num_days = num_days
         self.num_satellites = num_satellites
         self.phasing_n = phasing_n
-        self.phasing_p = phasing_p
+        self.phasing_d = phasing_d
         self.perigee_argument = perigee_argument
         self.inclination = inclination
         self.perigee_altitude = perigee_altitude
+        self.focus = focus
+        self.max_sats_per_orbit, self.max_sats = self.__calculate_max_satellites()
+        self.raan_spacing, self.mean_anomaly_spacing = self.__calculate_spacing()
+        self.num_orbits = self.__calculate_num_orbits()
+        self.raan, self.mean_anomaly = self.__calculate_orbits()
+        self.revisit_time = self.__calculate_revisit_time()
 
-    def equations(p):
-        x, y = p
-        return (y - x ** 2 - 7 + 5 * x, 4 * y - 8 * x + 21)
+        # print(self.equations(self.solve()))
+        # T, e, a = self.__calculate_orbit_params()
+        # temp = optimize.least_squares(self.equations, (e,a), bounds=(( 0, 0), ( 1, np.inf)))
+        # print(temp.x)
+        # print(temp.cost)
+        # print(self.__calculate_orbit_params())
+
+    def __calculate_max_satellites(self):
+        return self.num_days, self.phasing_d * self.num_days
+
+    def __calculate_num_orbits(self):
+        return math.floor(self.num_satellites / self.num_days)
+
+    def __calculate_spacing(self):
+        raan_spacing = -360 * self.phasing_n / self.phasing_d
+        mean_anomaly_spacing = -1 * raan_spacing * self.num_petals / self.num_days
+        if abs(mean_anomaly_spacing) > 360:
+            mean_anomaly_spacing = mean_anomaly_spacing % 360
+        if abs(raan_spacing) > 360:
+            raan_spacing %= 360
+
+        return raan_spacing, mean_anomaly_spacing
+
+    def __calculate_orbits(self):
+        raan = [0]
+        M = [0]
+
+        for idx in range(1, min(self.max_sats, self.num_satellites)):
+            raan_i = (raan[idx - 1] + self.raan_spacing)
+            # if (abs(raan_i) > 360):
+            # raan_i = raan_i%360
+            raan.append(raan_i)
+            M_i = M[idx - 1] + self.mean_anomaly_spacing
+            if (abs(M_i) > 360):
+                M_i = M_i % 360
+            M.append(M_i)
+        return raan, M
+
+    def __calculate_orbit_params(self):
+        M = heavenly_body_mass[self.focus]
+        G = constants["G"]
+        R = heavenly_body_radius[self.focus]
+        T = self.num_days / self.num_petals * 24 * 60 * 60  # [s]
+        a = math.pow(G * M * math.pow(T / (2 * math.pi), 2), 1 / 3)
+        e = 1 - (R + self.perigee_altitude) / a
+        return T, e, a
+
+    def equations(self, args):
+        e, a = args
+        R = heavenly_body_radius[self.focus]
+        M = heavenly_body_mass[self.focus]
+        G = constants["G"]
+        J2 = constants["J2E"]
+        wE = constants["wE"]
+        # print(1)
+        T = 28800
+        p = + 2 * (R + self.perigee_altitude) - math.pow(+self.perigee_altitude, 2) / a
+        epsilon = 3 * math.pow(R, 2) * J2 / (4 * math.pow(p, 2))
+        a1 = math.pow(1 + 2 * epsilon * (2 * math.pi / T) * math.cos(self.inclination * math.pi / 180) / wE, -1)
+        b = epsilon * (4 + 2 * math.sqrt(1 - math.pow(e, 2)))
+        c = (5 + 3 * math.sqrt(1 - math.pow(e, 2))) * math.pow(math.sin(self.inclination * math.pi / 180), 2)
+        x = e + (R + self.perigee_altitude) / a1 - 1
+        z = -T + 2 * math.pi * math.sqrt(math.pow(a, 3) / (M * G))
+        v = (2 * math.pi * self.num_days / (wE * self.num_petals)) * a1 + b - c
+
+        return x, z, v
+
+    def solve(self):
+        # T, e, a, p, epsilon = optimize.fsolve(self.equations, (1000, 0, 1000, 1000, 1000))
+        T, e, a = optimize.least_squares(self.equations, (1000, 0, 1000, 1000, 1000),
+                                         bounds=((0, 0, 0, 0, 0), (1000000, 1, 1000000, 1000000, 1000000)))
+        return T, e, a
+
+    def __calculate_revisit_time(self):
+        return (self.num_days/self.num_satellites)*24*60*60
+
+    def representation(self, metric = "flower"):
+        if metric == "flower":
+            i = self.inclination
+            return "{0}-{1}-{2}-{3}-{4} Flower".format(self.num_petals, self.num_days, self.num_satellites, self.phasing_n,
+                                                   self.phasing_d)
+        elif metric == "walker":
+            i = self.inclination
+            No = self.phasing_d
+            G = self.phasing_d*self.num_days/self.max_sats
+            Nso = self.max_sats_per_orbit
+            t = No * Nso
+            p = No
+            Nc = (self.num_petals*self.phasing_n+self.phasing_d)/G
+            f = int(Nc%No)
+
+            return "{0}:{1}/{2}/{3} Walker".format(i, t, p, f)
+
