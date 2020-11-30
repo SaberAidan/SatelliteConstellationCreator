@@ -13,7 +13,7 @@ def mod(x, y):
     return [a % b for a, b in zip(x, y)]
 
 
-heavenly_body_radius = {
+heavenly_body_radius = {  # [km]
     "earth": 6371,
     "luna": 1737,
     "mars": 3390,
@@ -27,8 +27,32 @@ heavenly_body_radius = {
     "pluto": 1188,
 }
 
-heavenly_body_mass = {
-    "earth": 5.972*10**24, # [kg]
+heavenly_body_mass = {  # [kg]
+    "earth": 5.972*10**24,
+    "luna": 73.46*10**21,
+    "mars": 641.71*10**21,
+    "venus": 4867.5*10**21,
+    "mercury": 330.11*10**21,
+    "sol": 1.9885*10**30,
+    "jupiter": 1.8982*10**27,
+    "saturn": 5.6834*10**26,
+    "uranus": 8.6810*10**25 ,
+    "neptune": 1.02413*10**26,
+    "pluto": 13.03*10**21,
+}
+
+heavenly_body_period = {  # [days]
+    "earth": 1,
+    "luna": 27.321661,
+    "mars": 1.02595675,
+    "venus": 243.0187,
+    "mercury": 58.6462,
+    "sol": 25.379995,
+    "jupiter": 0.41007,
+    "saturn": 0.426,
+    "uranus": 0.71833,
+    "neptune": 0.67125,
+    "pluto": 6.38718,
 }
 
 constants = {
