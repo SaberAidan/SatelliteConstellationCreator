@@ -1,7 +1,7 @@
 from distutils.core import setup
 
 setup(name="satellite-constellation",
-      version="0.1dev",
+      version="0.2",
       description="Create Satellite Constellations around the Earth, Luna and planets in the solar system",
       long_description=open('README.rst').read(),
       author="Aidan O'Brien - Saber Astronautics Australia",
@@ -18,6 +18,7 @@ setup(name="satellite-constellation",
           'Programming Language :: Python :: 3.5',
           'Programming Language :: Python :: 3.6',
           'Programming Language :: Python :: 3.7',
+          'Programming Language :: Python :: 3.8',
           'Topic :: Scientific/Engineering :: Astronomy',
           'Topic :: Scientific/Engineering :: Physics'
       ])
