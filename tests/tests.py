@@ -171,11 +171,11 @@ class TestStreets(unittest.TestCase):
         self.assertAlmostEqual(self.streets_constellation.earth_coverage_angle, 0.136, 3)
 
     def test_required_satellites_by_coverage(self):
-        self.assertAlmostEqual(self.streets_constellation.num_sats, 30)
+        self.assertAlmostEqual(self.streets_constellation.num_satellites, 30)
 
     def test_required_satellites_by_period(self):
         streets_constellation = SOCConstellation(1, 10, 1500, 60, [20], 0.8, 7770)
-        self.assertAlmostEqual(streets_constellation.num_sats, 10, 1)
+        self.assertAlmostEqual(streets_constellation.num_satellites, 10, 1)
 
 
 if __name__ == '__main__':
