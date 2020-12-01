@@ -37,10 +37,6 @@ class TestDummy(unittest.TestCase):
     print("Revisit Time : {0}, Minimum Revisit Time : {1}".format(flower_dummy.revisit_time,
                                                                   flower_dummy.minimum_revisit_time))
 
-    test_vis = sat_vis(5)
-    test_vis.plot
-
-
 class TestConstellationCreator(unittest.TestCase):  # Test for errors in the constellation creator
 
     def test_0_constellations(self):  # Check for number error with 0 constellations
@@ -146,9 +142,6 @@ class TestWalker(unittest.TestCase):
     def test_phasing(self):
         self.assertEqual(20, self.walker_constellation.correct_phasing)
 
-    def test_phasing(self):
-        self.assertEqual(20, self.walker_constellation.correct_phasing)
-
 
 class TestStreets(unittest.TestCase):
 
@@ -179,10 +172,6 @@ class TestStreets(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    # fig = plt.figure()
-    # ax = fig.add_subplot(111, projection='3d')
-    # ax.scatter(0, 0, 0, marker='o')
-    # plt.show()
 
     unittest.main()
 
