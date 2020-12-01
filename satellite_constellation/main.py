@@ -5,33 +5,17 @@ from satellite_constellation.SceneCreator import *
 from satellite_constellation.utils import *
 
 
-def rotate(vec, ang, ax='x'):
-    if ax == 'x':
-        r_x = np.array([[1, 0, 0],
-                        [0, math.cos(ang), -1 * math.sin(ang)],
-                        [0, math.sin(ang), math.cos(ang)]])
-        return np.matmul(r_x, vec)
-    elif ax == 'y':
-        r_y = np.array([[math.cos(ang), 0, math.sin(ang)],
-                        [0, 1, 0],
-                        [-math.sin(ang), 0, math.cos(ang)]])
-        return np.matmul(r_y, vec)
-    elif ax == 'z':
-        r_z = np.array([[math.cos(ang), -math.sin(ang), 0],
-                        [math.sin(ang), math.cos(ang), 0],
-                        [0, 0, 1]])
-        return np.matmul(r_z, vec)
+
 
 if __name__ == '__main__':
 
-    walker_constellation = WalkerConstellation(3, 3, 1, 30, 1000, 0, 20)
+    walker_constellation = WalkerConstellation(3, 1, 1, 30, 1000, 0, 20)
     r = walker_constellation.altitude + heavenly_body_radius[walker_constellation.focus]
     # print(walker_constellation.perigee_positions[2])
     print(walker_constellation.perigee_positions)
     RAAN = (walker_constellation.raan[1]) * math.pi / 180
     roty = 0
     rotx = walker_constellation.inclination * math.pi / 180
-
 
     t = np.linspace(0, 2 * math.pi, 100)
     plt.plot(r * np.cos(t), r * np.sin(t), 0)
@@ -66,13 +50,15 @@ if __name__ == '__main__':
         ax[idx].set_xlabel("X", fontsize=3)
         ax[idx].set_ylabel("Y", fontsize=3)
         ax[idx].set_zlabel("Z", fontsize=3)
-        for idy in range(walker_constellation.sats_per_plane):
-            x_i, y_i, z_i = sat_x, sat_y, sat_z = polar2cart(r, 90 * math.pi / 180,
-                                                             walker_constellation.perigee_positions[
-                                                                 idy] * math.pi / 180)
+        for idy in range(walker_constellation.num_sats):
+            x_i, y_i, z_i = sat_x, sat_y, sat_z = polar2cart(r, (90) * math.pi / 180,
+                                                             (walker_constellation.perigee_positions[
+                                                                 idy] +
+                                                              + walker_constellation.ta[idy]) * math.pi / 180)
             coords = np.array([x_i, y_i, z_i])
             coord_rot = rotate(coords, 90 * math.pi / 180, 'z')
-            coord_rot = rotate(coord_rot, rotx, 'x')
+            coord_rot = rotate(coord_rot, walker_constellation.inclination * math.pi / 180, 'x')
+            # coord_rot = rotate(coords, walker_constellation.raan[idy]* math.pi / 180, 'z')
             ax[idx].scatter(coord_rot[0], coord_rot[1], coord_rot[2])
 
 
