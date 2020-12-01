@@ -22,13 +22,16 @@ class Constellation:
     :param focus: Heavenly body at the focus of the orbit, defaults to 'Earth'
     """
 
-    def __init__(self, num_satellites, orbital_period, altitude, beam_width, eccentricity, focus='Earth'):
+    def __init__(self, num_satellites, orbital_period, altitude, beam_width, eccentricity, inclination, focus='Earth',
+                 name="constellation"):
         self.num_satellites = num_satellites
         self.orbital_period = orbital_period
         self.altitude = altitude
         self.beam_width = beam_width
         self.eccentricity = eccentricity
+        self.inclination = inclination
         self.focus = focus
+        self.name = name
         self.satellites = []
 
     def __str__(self):
@@ -75,16 +78,12 @@ class WalkerConstellation(Constellation):
 
     def __init__(self, num_sats, num_planes, phasing, inclination, altitude,
                  eccentricity, beam_width, name="Sat", focus="earth", starting_number=0):
-        self.num_sats = num_sats
+        super(WalkerConstellation, self).__init__(num_sats, 0, altitude, beam_width, eccentricity, inclination, focus,
+                                                  name)
         self.num_planes = num_planes
         self.phasing = phasing
-        self.inclination = inclination
-        self.altitude = altitude
-        self.eccentricity = eccentricity
-        self.beam_width = beam_width
         self.start_num = starting_number
         self.constellation_name = name
-        self.focus = focus
         self.sats_per_plane, self.correct_phasing = self.__corrected_planes()
         self.perigee_positions = self.__perigee_positions()
         self.raan = self.__calculate_raan()
@@ -92,33 +91,33 @@ class WalkerConstellation(Constellation):
         self.satellites = self.__build_satellites()
 
     def __corrected_planes(self):
-        sats_per_plane = int(self.num_sats / self.num_planes)
-        corrected_phasing = 360 * self.phasing / self.num_sats
+        sats_per_plane = int(self.num_satellites / self.num_planes)
+        corrected_phasing = 360 * self.phasing / self.num_satellites
         return sats_per_plane, corrected_phasing
 
     def __perigee_positions(self):
         perigees = list(range(0, 360, int(360 / self.sats_per_plane)))
         all_perigees = []
-        for i in range(self.num_sats):
+        for i in range(self.num_planes):
             all_perigees.extend(perigees)
         return all_perigees
         # return perigees
 
     def __calculate_raan(self):
-        raan = [0] * self.num_sats
-        for i in range(self.sats_per_plane, self.num_sats):
+        raan = [0] * self.num_satellites
+        for i in range(self.sats_per_plane, self.num_satellites):
             raan[i] = raan[i - self.sats_per_plane] + 360 / self.num_planes
         return raan
 
     def __calculate_ta(self):
-        ta = [0] * self.num_sats
-        for i in range(self.sats_per_plane, self.num_sats):
+        ta = [0] * self.num_satellites
+        for i in range(self.sats_per_plane, self.num_satellites):
             ta[i] = ta[i - self.sats_per_plane] + self.correct_phasing
         return ta
 
     def __build_satellites(self):
         satellites = []
-        for i in range(self.num_sats):
+        for i in range(self.num_satellites):
             sat_num = i + self.start_num + 1
             sat_name = self.constellation_name + " " + str(sat_num)
             satellites.append(Satellite(sat_name, self.altitude, self.eccentricity, self.inclination, self.raan[i],
@@ -127,11 +126,12 @@ class WalkerConstellation(Constellation):
         return satellites
 
     # def __calculate_revisit_time(self):  # Method from https://arxiv.org/pdf/1807.02021.pdf
-        # longitudinal_
-        # return revisit_time
+    # longitudinal_
+    # return revisit_time
 
     def __repr__(self):
-        return "{0}, {1}, {2}, {3}, {4}, {5}, {6}, name={7}, starting_number={8}".format(self.num_sats, self.num_planes,
+        return "{0}, {1}, {2}, {3}, {4}, {5}, {6}, name={7}, starting_number={8}".format(self.num_satellites,
+                                                                                         self.num_planes,
                                                                                          self.phasing, self.inclination,
                                                                                          self.altitude,
                                                                                          self.eccentricity,
@@ -140,7 +140,7 @@ class WalkerConstellation(Constellation):
                                                                                          self.start_num)
 
     def representation(self):
-        return "{0}:{1}/{2}/{3} Walker".format(self.inclination, self.num_sats, self.num_planes, self.phasing)
+        return "{0}:{1}/{2}/{3} Walker".format(self.inclination, self.num_satellites, self.num_planes, self.phasing)
 
 
 class SOCConstellation(Constellation):  # Needs to be cleaned up
@@ -161,28 +161,24 @@ class SOCConstellation(Constellation):  # Needs to be cleaned up
 
     def __init__(self, num_streets, street_width, altitude, beam_width, raan, eccentricity, revisit_time, name="Sat",
                  focus="earth", starting_number=0):  # Start off with just a single polar orbit
-        self.inclination = 90  # Polar Orbit
+        super(SOCConstellation, self).__init__(0, 0, altitude, beam_width, eccentricity, 90, focus, name)
+
         self.num_streets = num_streets
-        self.altitude = altitude
-        self.beam = beam_width
         self.start_num = starting_number
         self.raan = raan
-        self.eccentricity = eccentricity
-        self.constellation_name = name
-        self.focus = focus
         self.street_width = street_width
         self.revisit_time = revisit_time
         self.earth_coverage_radius, self.earth_coverage_angle = self.__calculate_earth_coverage()
         self.linear_spacing, self.angular_spacing = self.__calculate_spacing()
         self.perigee, self.semi_major, self.orbital_period = self.__calculate_orbit_params()
-        self.num_sats, self.sats_per_street, self.true_spacing = self.__calculate_required_satellites()
+        self.num_satellites, self.sats_per_street, self.true_spacing = self.__calculate_required_satellites()
         self.perigee_positions = self.__perigee_positions()
         self.ta = self.__calculate_ta()
         self.satellites = self.__build_satellites()
         self.longitudinal_drift = self.__calculate_longitudinal_drift()
 
     def __calculate_earth_coverage(self):
-        x = self.altitude * math.tan((math.pi / 180) * self.beam / 2)
+        x = self.altitude * math.tan((math.pi / 180) * self.beam_width / 2)
         theta = math.asin(x / heavenly_body_radius[self.focus])
         r = heavenly_body_radius[self.focus] * theta
         return r, theta
@@ -222,8 +218,8 @@ class SOCConstellation(Constellation):  # Needs to be cleaned up
             return total_satellites, upper, true_spacing
 
     def __calculate_ta(self):
-        phase = 360 / self.num_sats
-        ta = [0] * self.num_sats
+        phase = 360 / self.num_satellites
+        ta = [0] * self.num_satellites
         for i in range(self.num_streets):
             for j in range(self.sats_per_street):
                 ta[i * self.sats_per_street + j] = i * phase
@@ -232,7 +228,7 @@ class SOCConstellation(Constellation):  # Needs to be cleaned up
     def __perigee_positions(self):
         perigees = list(range(0, 360, int(360 / self.sats_per_street)))
         all_perigees = []
-        for i in range(self.num_sats):
+        for i in range(self.num_satellites):
             all_perigees.extend(perigees)
         return all_perigees
 
@@ -241,10 +237,10 @@ class SOCConstellation(Constellation):  # Needs to be cleaned up
         for i in range(self.num_streets):
             for j in range(self.sats_per_street):
                 sat_num = i * self.sats_per_street + j + self.start_num + 1
-                sat_name = self.constellation_name + " " + str(sat_num)
+                sat_name = self.name + " " + str(sat_num)
                 satellites.append(Satellite(sat_name, self.altitude, self.eccentricity, self.inclination, self.raan[i],
-                                            self.perigee_positions[j], self.ta[i * self.sats_per_street + j], self.beam,
-                                            focus=self.focus, rads=False))
+                                            self.perigee_positions[j], self.ta[i * self.sats_per_street + j],
+                                            self.beam_width, focus=self.focus, rads=False))
         return satellites
 
     def __calculate_longitudinal_drift(self):
@@ -252,16 +248,16 @@ class SOCConstellation(Constellation):  # Needs to be cleaned up
         return drift
 
     def __repr__(self):
-        return "{0}, {1}, {2}, {3}, {4}".format(self.num_sats,
+        return "{0}, {1}, {2}, {3}, {4}".format(self.num_satellites,
                                                 self.altitude, self.eccentricity,
-                                                self.beam,
-                                                self.constellation_name)
+                                                self.beam_width,
+                                                self.name)
 
     def representation(self):
-        return "{0}:{1}/{2}/{3} Walker".format(self.inclination, self.num_sats, self.num_streets, 0)
+        return "{0}:{1}/{2}/{3} Walker".format(self.inclination, self.num_satellites, self.num_streets, 0)
 
 
-class FlowerConstellation():
+class FlowerConstellation(Constellation):
     """
     Class for describing and holding a flower constellation of satellites
 
@@ -277,16 +273,13 @@ class FlowerConstellation():
     """
 
     def __init__(self, num_petals, num_days, num_satellites, phasing_n, phasing_d, perigee_argument,
-                 inclination, perigee_altitude, focus='earth'):
+                 inclination, perigee_altitude, beam_width = 0, focus='earth', name = "constellation"):
+        super(FlowerConstellation, self).__init__(num_satellites, 0, perigee_altitude, beam_width, 0, inclination, focus, name)
         self.num_petals = num_petals
         self.num_days = num_days
-        self.num_satellites = num_satellites
         self.phasing_n = phasing_n
         self.phasing_d = phasing_d
         self.perigee_argument = perigee_argument
-        self.inclination = inclination
-        self.perigee_altitude = perigee_altitude
-        self.focus = focus
         self.max_sats_per_orbit, self.max_sats = self.__calculate_max_satellites()
         self.raan_spacing, self.mean_anomaly_spacing = self.__calculate_spacing()
         self.num_orbits = self.__calculate_num_orbits()
@@ -339,7 +332,7 @@ class FlowerConstellation():
         R = heavenly_body_radius[self.focus]
         T = self.num_days / self.num_petals * 24 * 60 * 60  # [s]
         a = math.pow(G * M * math.pow(T / (2 * math.pi), 2), 1 / 3)
-        e = 1 - (R + self.perigee_altitude) / a
+        e = 1 - (R + self.altitude) / a
         return T, e, a
 
     # def equations(self, args):
