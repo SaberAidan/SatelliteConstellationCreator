@@ -1,4 +1,5 @@
 from __init__ import add_parent_directory  # Needed for running tests in pipelines
+
 add_parent_directory()
 import unittest
 from satellite_constellation.Satellite import Satellite
@@ -7,8 +8,9 @@ from satellite_constellation.ConstellationExceptions import *
 from satellite_constellation.SceneCreator import *
 import math
 
+
 class TestDummy(unittest.TestCase):
-    flower_dummy = FlowerConstellation(3, 1, 4, 1, 7, 10, 10, 600)
+    flower_dummy = FlowerConstellation(3, 1, 4, 1, 4, 10, 10, 600)
 
     print(flower_dummy.representation(), flower_dummy.representation(representation_type="walker"))
     print("Np : {0}, Nd : {1}, Ns : {2} , Fn : {3}, Fd : {4}".format(flower_dummy.num_petals,
@@ -25,10 +27,18 @@ class TestDummy(unittest.TestCase):
     print("RAAN spacing : {0}, Mean Anomaly Spacing : {1}".format(flower_dummy.raan_spacing,
                                                                   flower_dummy.mean_anomaly_spacing))
 
+    print('Eccentricity : {0}, Orbital Period : {1}, Semi Major {2}'.format(flower_dummy.eccentricity,
+                                                                            flower_dummy.orbital_period,
+                                                                            flower_dummy.semi_major))
+
     print("RAAN : ", flower_dummy.raan)
     print("Mean Anomaly : ", flower_dummy.mean_anomaly)
+    print("True Anomaly : ", flower_dummy.true_anomaly)
     print("Revisit Time : {0}, Minimum Revisit Time : {1}".format(flower_dummy.revisit_time,
                                                                   flower_dummy.minimum_revisit_time))
+
+    test_vis = sat_vis(5)
+    test_vis.plot
 
 
 class TestConstellationCreator(unittest.TestCase):  # Test for errors in the constellation creator
@@ -169,4 +179,10 @@ class TestStreets(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111, projection='3d')
+    # ax.scatter(0, 0, 0, marker='o')
+    # plt.show()
+
     unittest.main()
+
