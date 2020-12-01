@@ -2,6 +2,7 @@
 
 """
 import math
+import numpy as np
 
 def mod(x, y):
     """
@@ -67,3 +68,27 @@ def proper_round(num, dec=0):  # Add exception check for no decimal point found
     if num[-1]>='5':
         return float(num[:-2-(not dec)]+str(int(num[-2-(not dec)])+1))
     return float(num[:-1])
+
+def polar2cart(r, phi, theta):
+    return [
+         r * math.sin(phi) * math.cos(theta),
+         r * math.sin(theta) * math.sin(phi),
+         r * math.cos(phi)
+    ]
+
+def rotate(vec, ang, ax='x'):
+    if ax == 'x':
+        r_x = np.array([[1, 0, 0],
+                        [0, math.cos(ang), -1 * math.sin(ang)],
+                        [0, math.sin(ang), math.cos(ang)]])
+        return np.matmul(r_x, vec)
+    elif ax == 'y':
+        r_y = np.array([[math.cos(ang), 0, math.sin(ang)],
+                        [0, 1, 0],
+                        [-math.sin(ang), 0, math.cos(ang)]])
+        return np.matmul(r_y, vec)
+    elif ax == 'z':
+        r_z = np.array([[math.cos(ang), -math.sin(ang), 0],
+                        [math.sin(ang), math.cos(ang), 0],
+                        [0, 0, 1]])
+        return np.matmul(r_z, vec)
