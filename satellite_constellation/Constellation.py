@@ -286,12 +286,17 @@ class FlowerConstellation(Constellation):
         self.raan, self.mean_anomaly, self.true_anomaly = self.__calculate_orbits()
         self.revisit_time = self.__calculate_revisit_time()
         self.minimum_revisit_time = self.__calculate_minimum_revisit_time()
+        self.satellites = self.__build_satellites()
 
     def __calculate_max_satellites(self):
-        return self.num_days, self.phasing_d * self.num_days
+        max_sats = self.phasing_d*self.num_days
+        if max_sats < self.num_satellites:
+            self.num_satellites = max_sats
+        return self.num_days, max_sats
 
     def __calculate_num_orbits(self):
-        return math.floor(self.num_satellites / self.num_days)
+        # return math.floor(self.num_satellites / self.num_days)
+        return self.phasing_d
 
     def __calculate_spacing(self):
         raan_spacing = -360 * self.phasing_n / self.phasing_d
@@ -307,11 +312,9 @@ class FlowerConstellation(Constellation):
         raan = [0]
         M = [0]
         v = [0]
-
+        testList = [[0,0]]
         for idx in range(1, min(self.max_sats, self.num_satellites)):
             raan_i = (raan[idx - 1] + self.raan_spacing)
-            # if (abs(raan_i) > 360):
-            # raan_i = raan_i%360
             if raan_i < 0:
                 raan_i = 360 + raan_i
             raan.append(raan_i)
@@ -342,6 +345,15 @@ class FlowerConstellation(Constellation):
     def __calculate_minimum_revisit_time(self):
         min_revisit_time = self.num_days / self.max_sats
         return min_revisit_time
+
+    def __build_satellites(self):
+        satellites = []
+        for i in range(self.num_satellites):
+            sat_name = i
+            satellites.append(Satellite(sat_name,self.altitude,self.eccentricity,self.inclination,self.raan[i],
+                                        self.true_anomaly[i],self.true_anomaly[i],self.beam_width,self.focus,rads = True))
+
+        return satellites
 
     def representation(self, representation_type="flower"):
         if representation_type == "flower":

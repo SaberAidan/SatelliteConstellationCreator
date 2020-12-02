@@ -7,10 +7,11 @@ from satellite_constellation.Constellation import *
 from satellite_constellation.ConstellationExceptions import *
 from satellite_constellation.SceneCreator import *
 import math
+import numpy as np
 
 
 class TestDummy(unittest.TestCase):
-    flower_dummy = FlowerConstellation(3, 1, 4, 1, 4, 10, 10, 600)
+    flower_dummy = FlowerConstellation(3,2,4,1,4, 10, 10, 2500)
 
     print(flower_dummy.representation(), flower_dummy.representation(representation_type="walker"))
     print("Np : {0}, Nd : {1}, Ns : {2} , Fn : {3}, Fd : {4}".format(flower_dummy.num_petals,
@@ -36,6 +37,8 @@ class TestDummy(unittest.TestCase):
     print("True Anomaly : ", flower_dummy.true_anomaly)
     print("Revisit Time : {0}, Minimum Revisit Time : {1}".format(flower_dummy.revisit_time,
                                                                   flower_dummy.minimum_revisit_time))
+
+    raan_np = np.array([np.array(flower_dummy.raan), flower_dummy.mean_anomaly])
 
 class TestConstellationCreator(unittest.TestCase):  # Test for errors in the constellation creator
 
@@ -171,7 +174,7 @@ class TestStreets(unittest.TestCase):
         self.assertAlmostEqual(streets_constellation.num_satellites, 10, 1)
 
 
+
+
 if __name__ == '__main__':
-
     unittest.main()
-
