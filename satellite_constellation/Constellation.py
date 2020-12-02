@@ -3,10 +3,8 @@ Class for holding Constellations of Satellites within it.
 """
 from .Satellite import Satellite
 from .utils import *
-# from scipy import optimize
 import warnings
 import math
-import numpy as np
 
 
 class Constellation:
@@ -61,7 +59,7 @@ class Constellation:
         return short_scene
 
 
-class WalkerConstellation(Constellation):
+class WalkerConstellation(Constellation):  # Walker delta pattern
     """
     Class for describing and holding a walker constellation of satellites
 
@@ -143,7 +141,7 @@ class WalkerConstellation(Constellation):
         return "{0}:{1}/{2}/{3} Walker".format(self.inclination, self.num_satellites, self.num_planes, self.phasing)
 
 
-class SOCConstellation(Constellation):  # Needs to be cleaned up
+class SOCConstellation(Constellation):  # This is really just a part of a walker star pattern
 
     """
     Class for describing and holding a walker constellation of satellites
@@ -273,8 +271,9 @@ class FlowerConstellation(Constellation):
     """
 
     def __init__(self, num_petals, num_days, num_satellites, phasing_n, phasing_d, perigee_argument,
-                 inclination, perigee_altitude, beam_width = 0, focus='earth', name = "constellation"):
-        super(FlowerConstellation, self).__init__(num_satellites, 0, perigee_altitude, beam_width, 0, inclination, focus, name)
+                 inclination, perigee_altitude, beam_width=0, focus='earth', name="constellation"):
+        super(FlowerConstellation, self).__init__(num_satellites, 0, perigee_altitude, beam_width, 0, inclination,
+                                                  focus, name)
         self.num_petals = num_petals
         self.num_days = num_days
         self.phasing_n = phasing_n
@@ -329,37 +328,12 @@ class FlowerConstellation(Constellation):
     def __calculate_orbit_params(self):
         M = heavenly_body_mass[self.focus]
         G = constants["G"]
-        R = heavenly_body_radius[self.focus]
-        T = self.num_days / self.num_petals * 24 * 60 * 60  # [s]
+        wE = constants["wE"]
+        T = (2 * math.pi / wE) * (self.num_days / self.num_petals)
         a = math.pow(G * M * math.pow(T / (2 * math.pi), 2), 1 / 3)
-        e = 1 - (R + self.altitude) / a
-        return T, e, a
+        e = 1 - (heavenly_body_radius[self.focus] * 10 ** 3 + self.altitude) / a
 
-    # def equations(self, args):
-    #     e, a = args
-    #     R = heavenly_body_radius[self.focus]
-    #     M = heavenly_body_mass[self.focus]
-    #     G = constants["G"]
-    #     J2 = constants["J2E"]
-    #     wE = constants["wE"]
-    #     # print(1)
-    #     T = 28800
-    #     p = + 2 * (R + self.perigee_altitude) - math.pow(+self.perigee_altitude, 2) / a
-    #     epsilon = 3 * math.pow(R, 2) * J2 / (4 * math.pow(p, 2))
-    #     a1 = math.pow(1 + 2 * epsilon * (2 * math.pi / T) * math.cos(self.inclination * math.pi / 180) / wE, -1)
-    #     b = epsilon * (4 + 2 * math.sqrt(1 - math.pow(e, 2)))
-    #     c = (5 + 3 * math.sqrt(1 - math.pow(e, 2))) * math.pow(math.sin(self.inclination * math.pi / 180), 2)
-    #     x = e + (R + self.perigee_altitude) / a1 - 1
-    #     z = -T + 2 * math.pi * math.sqrt(math.pow(a, 3) / (M * G))
-    #     v = (2 * math.pi * self.num_days / (wE * self.num_petals)) * a1 + b - c
-    #
-    #     return x, z, v
-    #
-    # def solve(self):
-    #     # T, e, a, p, epsilon = optimize.fsolve(self.equations, (1000, 0, 1000, 1000, 1000))
-    #     T, e, a = optimize.least_squares(self.equations, (1000, 0, 1000, 1000, 1000),
-    #                                      bounds=((0, 0, 0, 0, 0), (1000000, 1, 1000000, 1000000, 1000000)))
-    #     return T, e, a
+        return T, e, a
 
     def __calculate_revisit_time(self):
         revisit_time = self.num_days / self.num_satellites
