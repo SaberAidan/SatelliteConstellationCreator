@@ -13,10 +13,11 @@ class Constellation:
     Contains parameters general to all types of satellites
 
     :param num_satellites: Number of satellites used in the constellation
-    :param orbital_period: Orbital period of the satellites
-    :param altitude: altitude of the satellites
-    :param beam_width: Sensor beam width of the satellites
+    :param orbital_period: Orbital period of the satellites [s]
+    :param altitude: altitude of the satellites [km]
+    :param beam_width: Sensor beam width of the satellites [degrees]
     :param eccentricity: Eccentricity of satellite orbits
+    :param inclination: Inclination of orbit relative to equatorial plane "i" [degrees]
     :param focus: Heavenly body at the focus of the orbit, defaults to 'Earth'
     """
 
@@ -66,10 +67,10 @@ class WalkerConstellation(Constellation):  # Walker delta pattern
     :param num_sats: Number of satellites used in the constellation "t"
     :param num_planes: The number of different orbit planes in the constellation "p"
     :param phasing: Dictates the spacing between equivalent satellites in neighbouring orbital planes "f"
-    :param inclination: Inclination of orbit relative to equatorial plane "i"
-    :param altitude: Altitude of satellites in orbit
+    :param inclination: Inclination of orbit relative to equatorial plane "i" [degrees]
+    :param altitude: Altitude of satellites in orbit [km]
     :param eccentricity: Eccentricity of satellite orbits
-    :param beam_width: Sensor beam width of the satellites
+    :param beam_width: Sensor beam width of the satellites [degrees]
     :param name: Name of constellation, defaults to "Sat"
     :param focus: Heavenly body at the focus of the orbit, defaults to 'Earth'
     """
@@ -147,18 +148,19 @@ class SOCConstellation(Constellation):  # This is really just a part of a walker
     Class for describing and holding a walker constellation of satellites
 
     :param num_streets: Number of satellites used in the constellation
-    :param street_width: Angular width of street
-    :param altitude: Altitude of satellites in orbit
-    :param beam_width: Sensor beam width of the satellites
-    :param raan: List of right ascension for each street
+    :param street_width: Angular width of street [degrees]
+    :param altitude: Altitude of satellites in orbit [km]
+    :param beam_width: Sensor beam width of the satellites [degrees]
+    :param raan: List of right ascension for each street [degrees]
     :param eccentricity: Eccentricity of satellite orbits
-    :param revisit_time: Time until latitude re-enters satellite coverage
+    :param revisit_time: Time until latitude re-enters satellite coverage [s]
     :param name: Name of constellation, defaults to "Sat"
     :param focus: Heavenly body at the focus of the orbit, defaults to 'Earth'
     """
 
     def __init__(self, num_streets, street_width, altitude, beam_width, raan, eccentricity, revisit_time, name="Sat",
-                 focus="earth", starting_number=0):  # Start off with just a single polar orbit
+                 focus="earth", starting_number=0):
+
         super(SOCConstellation, self).__init__(0, 0, altitude, beam_width, eccentricity, 90, focus, name)
 
         self.num_streets = num_streets
@@ -264,14 +266,15 @@ class FlowerConstellation(Constellation):
     :param num_satellites: The desired number of satellites involved in the constellation
     :param phasing_n: Phasing parameter n, effects allowable satellite positions
     :param phasing_d: Phasing parameter d, effects the maximum number of satellites
-    :param perigee_argument: Argument of perigee for satellite orbits
-    :param inclination: Inclination of orbit relative to equatorial plane
-    :param perigee_altitude: Altitude of perigee for satellite orbits
+    :param perigee_argument: Argument of perigee for satellite orbits [degrees]
+    :param inclination: Inclination of orbit relative to equatorial plane [degrees]
+    :param perigee_altitude: Altitude of perigee for satellite orbits [km]
+    :param beam_width: Angular width of satellite sensor beam [degrees]
     :param focus: Object at focus of orbit, defaults to 'earth'
     """
 
     def __init__(self, num_petals, num_days, num_satellites, phasing_n, phasing_d, perigee_argument,
-                 inclination, perigee_altitude, beam_width=0, focus='earth', name="constellation"):
+                 inclination, perigee_altitude, beam_width, focus='earth', name="constellation"):
         super(FlowerConstellation, self).__init__(num_satellites, 0, perigee_altitude, beam_width, 0, inclination,
                                                   focus, name)
         self.num_petals = num_petals
