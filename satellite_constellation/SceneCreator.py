@@ -10,6 +10,8 @@ import warnings
 from .utils import mod, heavenly_body_radius
 from .ConstellationExceptions import *
 
+
+
 def scene_xml_generator(scene):
     warnings.warn("XML support is depreciated and not supported from PIGI 0.8.5 onward", DeprecationWarning)
     scene_start = '<Pigi>\n' \
@@ -89,7 +91,6 @@ def scene_xml_generator(scene):
     return "{0} {1} {2}".format(scene_start, scene_xml, scene_end)
 
 
-
 def constellation_creator(num_constellations, satellite_nums, satellite_planes, plane_phasing, inclination, altitude,
                           eccentricity, constellation_beam_width, sat_name="Sat", focus="earth"):
     """
@@ -114,16 +115,18 @@ def constellation_creator(num_constellations, satellite_nums, satellite_planes, 
     """
 
     walker_errors(num_constellations, satellite_nums, satellite_planes, plane_phasing, inclination, altitude,
-                          eccentricity, constellation_beam_width,focus = "earth")
+                  eccentricity, constellation_beam_width, focus="earth")
 
     scene = []
     for idx in range(num_constellations):
         start_num = sum(satellite_nums[0:idx])
-        scene.append(WalkerConstellation(satellite_nums[idx], satellite_planes[idx], plane_phasing[idx], inclination[idx],
-                                   altitude[idx], eccentricity[idx], constellation_beam_width[idx], name=sat_name,
-                                   starting_number=start_num, focus=focus))
+        scene.append(
+            WalkerConstellation(satellite_nums[idx], satellite_planes[idx], plane_phasing[idx], inclination[idx],
+                                altitude[idx], eccentricity[idx], constellation_beam_width[idx], name=sat_name,
+                                starting_number=start_num, focus=focus))
 
     return scene
+
 
 def ground_array_creator(num_ground_stations, latitudes, longitudes, elevations, beam_widths, name="GS"):
     """
@@ -162,9 +165,10 @@ def ground_array_creator(num_ground_stations, latitudes, longitudes, elevations,
 
     return scene
 
-def walker_errors(num_constellations, satellite_nums, satellite_planes, plane_phasing, inclination, altitude, eccentricity,
-                  constellation_beam_width, sat_name="Sat", focus="earth"):
 
+def walker_errors(num_constellations, satellite_nums, satellite_planes, plane_phasing, inclination, altitude,
+                  eccentricity,
+                  constellation_beam_width, sat_name="Sat", focus="earth"):
     error_found = False
 
     if num_constellations < 1 or (num_constellations % 1):
@@ -197,7 +201,7 @@ def walker_errors(num_constellations, satellite_nums, satellite_planes, plane_ph
     if any(abs(x) > 90 for x in inclination):
         error_found = True
         raise InclinationError("Inclination greater than 90 degrees from equitorial orbit")
-        #Could implement wrap around of angles here
+        # Could implement wrap around of angles here
 
     if any(x < 0 for x in altitude):
         error_found = True
@@ -225,6 +229,7 @@ def walker_errors(num_constellations, satellite_nums, satellite_planes, plane_ph
         return True
     else:
         return False
+
 
 def create_scene(num_constellations, num_sats, sat_planes, plane_phasing, sat_inclination, sat_alt,
                  sat_eccentricity, const_beam_width,
@@ -255,3 +260,6 @@ def create_scene(num_constellations, num_sats, sat_planes, plane_phasing, sat_in
     scene.extend(ground_array_creator(num_ground_stations, latitudes, longitudes, elevations, beam_widths, name=gsname))
 
     return scene
+
+
+
