@@ -11,7 +11,6 @@ from .utils import mod, heavenly_body_radius
 from .ConstellationExceptions import *
 
 
-
 def scene_xml_generator(scene):
     warnings.warn("XML support is depreciated and not supported from PIGI 0.8.5 onward", DeprecationWarning)
     scene_start = '<Pigi>\n' \

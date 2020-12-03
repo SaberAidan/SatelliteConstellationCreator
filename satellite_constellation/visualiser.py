@@ -4,6 +4,15 @@ from satellite_constellation.utils import *
 
 def draw_walker(walker_constellation):
     r = walker_constellation.altitude + heavenly_body_radius[walker_constellation.focus]
+    print( walker_constellation.num_satellites)
+    print('raan',walker_constellation.raan)
+    print('perigee',walker_constellation.perigee_positions)
+    print('ta',walker_constellation.ta)
+
+    if walker_constellation.inclination % 90 == 0:
+        plane_range = 180
+    else:
+        plane_range = 360
 
     t = np.linspace(0, 2 * math.pi, 100)
 
@@ -29,7 +38,7 @@ def draw_walker(walker_constellation):
         ax[idx].set_zlabel("Z", fontsize=3)
 
         for idy in range(walker_constellation.num_planes):  # Plot orbital planes
-            ang = idy * 360 / walker_constellation.num_planes
+            ang = idy * plane_range / walker_constellation.num_planes
             t = np.linspace(0, 2 * math.pi, 100)
             plt.plot(r * np.cos(t), r * np.sin(t), 0)
             x, y, z = r * np.cos(t), r * np.sin(t), 0 * t
@@ -46,16 +55,16 @@ def draw_walker(walker_constellation):
             for idz in range(walker_constellation.sats_per_plane):
                 ctr = idz + idy * (walker_constellation.sats_per_plane)
 
-                x_i, y_i, z_i = sat_x, sat_y, sat_z = polar2cart(r, (90) * math.pi / 180,
+                x_i, y_i, z_i = polar2cart(r, (90) * math.pi / 180,
                                                                  (walker_constellation.perigee_positions[
                                                                       ctr] +
                                                                   + walker_constellation.ta[ctr]
                                                                   + walker_constellation.raan[ctr]) * math.pi / 180)
                 coords = np.array([x_i, y_i, z_i])
-                coords = rotate(coords, 90 * math.pi / 180, 'z')
                 coords = rotate(coords, walker_constellation.inclination * math.pi / 180, 'x')
                 coords = rotate(coords, (walker_constellation.raan[ctr]) * math.pi / 180, 'z')
                 ax[idx].scatter(coords[0], coords[1], coords[2])
+
 
     plt.savefig('../../walker_plot.png', dpi=300, bbox_inches='tight')
 

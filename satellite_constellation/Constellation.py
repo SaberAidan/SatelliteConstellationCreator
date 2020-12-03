@@ -60,7 +60,7 @@ class Constellation:
         return short_scene
 
 
-class WalkerConstellation(Constellation):  # Walker delta pattern
+class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit for polar orbits
     """
     Class for describing and holding a walker constellation of satellites
 
@@ -79,6 +79,10 @@ class WalkerConstellation(Constellation):  # Walker delta pattern
                  eccentricity, beam_width, name="Sat", focus="earth", starting_number=0):
         super(WalkerConstellation, self).__init__(num_sats, 0, altitude, beam_width, eccentricity, inclination, focus,
                                                   name)
+        if (self.inclination % 90 == 0):
+            self.plane_range = 180
+        else:
+            self.plane_range = 360
         self.num_planes = num_planes
         self.phasing = phasing
         self.start_num = starting_number
@@ -91,7 +95,7 @@ class WalkerConstellation(Constellation):  # Walker delta pattern
 
     def __corrected_planes(self):
         sats_per_plane = int(self.num_satellites / self.num_planes)
-        corrected_phasing = 360 * self.phasing / self.num_satellites
+        corrected_phasing = self.plane_range * self.phasing / self.num_satellites
         return sats_per_plane, corrected_phasing
 
     def __perigee_positions(self):
@@ -104,7 +108,7 @@ class WalkerConstellation(Constellation):  # Walker delta pattern
     def __calculate_raan(self):
         raan = [0] * self.num_satellites
         for i in range(self.sats_per_plane, self.num_satellites):
-            raan[i] = raan[i - self.sats_per_plane] + 360 / self.num_planes
+            raan[i] = raan[i - self.sats_per_plane] + self.plane_range / self.num_planes
         return raan
 
     def __calculate_ta(self):
@@ -138,7 +142,10 @@ class WalkerConstellation(Constellation):  # Walker delta pattern
                                                                                          self.start_num)
 
     def representation(self):
-        return "{0}:{1}/{2}/{3} Walker".format(self.inclination, self.num_satellites, self.num_planes, self.phasing)
+        return "{0}:{1}/{2}/{3} Walker".format(self.inclination, self.num_satellites, self.num_planes,
+                                               self.phasing)  # N
+
+
 
 
 class SOCConstellation(Constellation):  # This is really just a part of a walker star pattern
@@ -353,7 +360,7 @@ class FlowerConstellation(Constellation):
         for i in range(self.num_satellites):
             sat_name = i
             satellites.append(Satellite(sat_name, self.altitude, self.eccentricity, self.inclination, self.raan[i],
-                                        self.true_anomaly[i], self.true_anomaly[i], self.beam_width, self.focus,
+                                        -self.true_anomaly[i], self.true_anomaly[i], self.beam_width, self.focus,
                                         rads=False))
 
         return satellites
