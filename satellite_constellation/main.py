@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-import numpy as np
 from satellite_constellation.Constellation import *
 from satellite_constellation.SceneCreator import *
 from satellite_constellation.utils import *
@@ -74,6 +73,10 @@ def draw_flower(flower_constellation):
     r = heavenly_body_radius[flower_constellation.focus] * 10 ** 3
     x1, y1, z1 = r * np.cos(t), r * np.sin(t), 0 * t
     x2, y2, z2 = r * np.cos(t), 0 * t, r * np.sin(t)
+    x3, y3, z3 = 0*t, r * np.cos(t), r * np.sin(t)
+    print(r,disp)
+    print((disp - r))
+
 
     fig = plt.figure()
 
@@ -88,16 +91,16 @@ def draw_flower(flower_constellation):
         ax[idx].set_xlim(-3 / 2 * a, 3 / 2 * a)
         ax[idx].set_ylim(-3 / 2 * a, 3 / 2 * a)
         ax[idx].set_zlim(-3 / 2 * a, 3 / 2 * a)
-        ax[idx].plot(x1, y1, z1, '--', linewidth=1.5, color='r')  # Plot equatorial circle
-        ax[idx].plot(x2, y2, z2, '--', linewidth=1.5, color='r')  # Plot equatorial circle
-
+        ax[idx].plot(x1, y1, z1, '--', linewidth=0.1, color='r')  # Plot equatorial circle
+        ax[idx].plot(x2, y2, z2, '--', linewidth=0.1, color='r')  # Plot equatorial circle
+        ax[idx].plot(x3, y3, z3, '--', linewidth=0.1, color='r')  # Plot equatorial circle
         ax[idx].zaxis.set_tick_params(labelsize=3)
         ax[idx].xaxis.set_tick_params(labelsize=3)
         ax[idx].yaxis.set_tick_params(labelsize=3)
         ax[idx].set_xlabel("X", fontsize=3)
         ax[idx].set_ylabel("Y", fontsize=3)
         ax[idx].set_zlabel("Z", fontsize=3)
-        for idy in range(flower_constellation.num_orbits):  # Plot orbital planes
+        for idy in range(min(flower_constellation.num_orbits,flower_constellation.num_satellites)):  # Plot orbital planes
             x, y, z = disp + a * np.cos(t), b * np.sin(t), 0 * t
             for idz in range(100):
                 coords = np.array([x[idz], y[idz], z[idz]])
@@ -109,7 +112,7 @@ def draw_flower(flower_constellation):
             ax[idx].plot(x, y, z, '--', linewidth=0.5)
 
         for idy in range(flower_constellation.num_satellites):  # Plot satellites
-            ang = (flower_constellation.mean_anomaly[idy] + 180) * math.pi / 180
+            ang = (flower_constellation.true_anomaly[idy] + 180) * math.pi / 180
             x_i, y_i, z_i = disp + a * np.cos(ang), b * np.sin(ang), 0
             coords = np.array([x_i, y_i, z_i])
             coords = rotate(coords, flower_constellation.raan[idy] * math.pi / 180, 'z')
@@ -121,4 +124,4 @@ def draw_flower(flower_constellation):
 
 if __name__ == '__main__':
     draw_walker(WalkerConstellation(8, 2, 1, 45, 1000, 0, 20))
-    draw_flower(FlowerConstellation(31, 11, 30, 7, 10, 0, 45, 25000, 0))
+    draw_flower(FlowerConstellation(37,18,57,6,19, 0, 0, 19702, 30))

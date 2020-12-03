@@ -9,8 +9,7 @@ from itertools import zip_longest
 import warnings
 from .utils import mod, heavenly_body_radius
 from .ConstellationExceptions import *
-from matplotlib import pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+
 
 
 def scene_xml_generator(scene):
