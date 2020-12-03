@@ -79,7 +79,7 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
                  eccentricity, beam_width, name="Sat", focus="earth", starting_number=0):
         super(WalkerConstellation, self).__init__(num_sats, 0, altitude, beam_width, eccentricity, inclination, focus,
                                                   name)
-        if (self.inclination % 90 == 0):
+        if self.inclination % 90 == 0:
             self.plane_range = 180
         else:
             self.plane_range = 360
@@ -92,6 +92,7 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
         self.raan = self.__calculate_raan()
         self.ta = self.__calculate_ta()
         self.satellites = self.__build_satellites()
+        self.coverage_area = self.__calculate_simple_coverage()
 
     def __corrected_planes(self):
         sats_per_plane = int(self.num_satellites / self.num_planes)
@@ -116,6 +117,18 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
         for i in range(self.sats_per_plane, self.num_satellites):
             ta[i] = ta[i - self.sats_per_plane] + self.correct_phasing
         return ta
+
+    def __calculate_simple_coverage(self):
+        half_width = (self.beam_width/2)*math.pi/180
+        max_width = math.atan(heavenly_body_radius[self.focus]/(self.altitude + heavenly_body_radius[self.focus]))
+        if (half_width > max_width):
+            half_width = max_width
+        x = self.altitude * math.tan( half_width)
+        theta = math.asin(x / heavenly_body_radius[self.focus])
+        r = heavenly_body_radius[self.focus] * theta
+        area = math.pi * math.pow(r,2)
+        total_area = area*self.num_satellites
+        return total_area
 
     def __build_satellites(self):
         satellites = []
@@ -142,10 +155,7 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
                                                                                          self.start_num)
 
     def representation(self):
-        return "{0}:{1}/{2}/{3} Walker".format(self.inclination, self.num_satellites, self.num_planes,
-                                               self.phasing)  # N
-
-
+        return "{0}:{1}/{2}/{3} Walker".format(self.inclination, self.num_satellites, self.num_planes, self.phasing)
 
 
 class SOCConstellation(Constellation):  # This is really just a part of a walker star pattern

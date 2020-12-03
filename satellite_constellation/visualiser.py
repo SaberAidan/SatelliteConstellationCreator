@@ -4,10 +4,6 @@ from satellite_constellation.utils import *
 
 def draw_walker(walker_constellation):
     r = walker_constellation.altitude + heavenly_body_radius[walker_constellation.focus]
-    print( walker_constellation.num_satellites)
-    print('raan',walker_constellation.raan)
-    print('perigee',walker_constellation.perigee_positions)
-    print('ta',walker_constellation.ta)
 
     if walker_constellation.inclination % 90 == 0:
         plane_range = 180
