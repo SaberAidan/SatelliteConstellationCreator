@@ -291,7 +291,7 @@ class FlowerConstellation(Constellation):
         self.satellites = self.__build_satellites()
 
     def __calculate_max_satellites(self):
-        max_sats = self.phasing_d*self.num_days
+        max_sats = self.phasing_d * self.num_days
         if max_sats < self.num_satellites:
             self.num_satellites = max_sats
         return self.num_days, max_sats
@@ -314,7 +314,7 @@ class FlowerConstellation(Constellation):
         raan = [0]
         M = [0]
         v = [0]
-        testList = [[0,0]]
+        testList = [[0, 0]]
         for idx in range(1, min(self.max_sats, self.num_satellites)):
             raan_i = (raan[idx - 1] + self.raan_spacing)
             if raan_i < 0:
@@ -352,8 +352,9 @@ class FlowerConstellation(Constellation):
         satellites = []
         for i in range(self.num_satellites):
             sat_name = i
-            satellites.append(Satellite(sat_name,self.altitude,self.eccentricity,self.inclination,self.raan[i],
-                                        self.true_anomaly[i],self.true_anomaly[i],self.beam_width,self.focus,rads = True))
+            satellites.append(Satellite(sat_name, self.altitude, self.eccentricity, self.inclination, self.raan[i],
+                                        self.true_anomaly[i], self.true_anomaly[i], self.beam_width, self.focus,
+                                        rads=False))
 
         return satellites
 
