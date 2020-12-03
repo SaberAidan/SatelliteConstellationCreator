@@ -100,7 +100,6 @@ class WalkerConstellation(Constellation):  # Walker delta pattern
         for i in range(self.num_planes):
             all_perigees.extend(perigees)
         return all_perigees
-        # return perigees
 
     def __calculate_raan(self):
         raan = [0] * self.num_satellites
