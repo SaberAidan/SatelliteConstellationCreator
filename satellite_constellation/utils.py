@@ -76,7 +76,7 @@ def polar2cart(r, phi, theta):
          r * math.cos(phi)
     ]
 
-def rotate(vec, ang, ax='x'):
+def rotate(vec, ang, ax='x', rpy= [0,0,0]):
     if ax == 'x':
         r_x = np.array([[1, 0, 0],
                         [0, math.cos(ang), -1 * math.sin(ang)],
@@ -92,3 +92,25 @@ def rotate(vec, ang, ax='x'):
                         [math.sin(ang), math.cos(ang), 0],
                         [0, 0, 1]])
         return np.matmul(r_z, vec)
+    elif ax == 'c':
+        ang_yaw, ang_pitch, ang_roll = rpy[2],rpy[1],rpy[0]
+        ang_yaw *= math.pi/180
+        ang_pitch *= math.pi/180
+        ang_roll *= math.pi/180
+        r_yaw = np.array([[1, 0, 0],
+                        [0, math.cos(ang_yaw), -1 * math.sin(ang_yaw)],
+                        [0, math.sin(ang_yaw), math.cos(ang_yaw)]])
+        r_pitch = np.array([[math.cos(ang_pitch), 0, math.sin(ang_pitch)],
+                        [0, 1, 0],
+                        [-math.sin(ang_pitch), 0, math.cos(ang_pitch)]])
+        r_roll = np.array([[math.cos(ang_roll), 0, math.sin(ang_roll)],
+                        [0, 1, 0],
+                        [-math.sin(ang_roll), 0, math.cos(ang_roll)]])
+        r_c = np.matmul(r_yaw,r_pitch)
+        r_c = np.matmul(r_c,r_roll)
+        r_c = np.matmul(r_c,vec)
+        return r_c
+
+
+
+

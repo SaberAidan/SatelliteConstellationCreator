@@ -31,10 +31,10 @@ class TestConstellationCreator(unittest.TestCase):  # Test for errors in the con
             constellation = constellation_creator(1, satellite_nums, plane_nums, [F], [30], [1000], [0.5], [20])
 
     def test_phasing(self):
-        T, P, F = 18, 3, 3  # This would put the satellites right on top of eachother
+        T, P, F = 18, 3, 3  # This would put the satellites right on top of each other
         with self.assertRaises(PhaseError):
             constellation = constellation_creator(1, [T], [P], [F], [30], [1000], [0.5], [20])
-        T, P, F = 18, 3, 6  # This would also put the satellites right on top of eachother
+        T, P, F = 18, 3, 6  # This would also put the satellites right on top of each other
         with self.assertRaises(PhaseError):
             constellation = constellation_creator(1, [T], [P], [F], [30], [1000], [0.5], [20])
 
