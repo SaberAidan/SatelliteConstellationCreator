@@ -5,6 +5,7 @@ from .Satellite import Satellite
 from .utils import *
 import warnings
 import math
+import numpy as np
 
 
 class Constellation:
@@ -91,8 +92,10 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
         self.perigee_positions = self.__perigee_positions()
         self.raan = self.__calculate_raan()
         self.ta = self.__calculate_ta()
+        self.orbital_period = self.__calculate_orbit_params()
         self.satellites = self.__build_satellites()
         self.coverage_area = self.__calculate_simple_coverage()
+        self.revisit_time = self.__calculate_revisit_time()
 
     def __corrected_planes(self):
         sats_per_plane = int(self.num_satellites / self.num_planes)
@@ -119,15 +122,15 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
         return ta
 
     def __calculate_simple_coverage(self):
-        half_width = (self.beam_width/2)*math.pi/180
-        max_width = math.atan(heavenly_body_radius[self.focus]/(self.altitude + heavenly_body_radius[self.focus]))
-        if (half_width > max_width):
+        half_width = (self.beam_width / 2) * math.pi / 180
+        max_width = math.atan(heavenly_body_radius[self.focus] / (self.altitude + heavenly_body_radius[self.focus]))
+        if half_width > max_width:
             half_width = max_width
-        x = self.altitude * math.tan( half_width)
+        x = self.altitude * math.tan(half_width)
         theta = math.asin(x / heavenly_body_radius[self.focus])
         r = heavenly_body_radius[self.focus] * theta
-        area = math.pi * math.pow(r,2)
-        total_area = area*self.num_satellites
+        area = math.pi * math.pow(r, 2)
+        total_area = area * self.num_satellites
         return total_area
 
     def __build_satellites(self):
@@ -140,9 +143,47 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
                                         rads=False))
         return satellites
 
-    # def __calculate_revisit_time(self):  # Method from https://arxiv.org/pdf/1807.02021.pdf
-    # longitudinal_
-    # return revisit_time
+    def __calculate_orbit_params(self):
+        perigee = heavenly_body_radius[self.focus] + self.altitude  # [km]
+        semi_major = perigee / (1 - self.eccentricity)  # [km]
+        orbital_period = 2 * math.pi * math.sqrt(
+            (semi_major * 10 ** 3) ** 3 / (heavenly_body_mass[self.focus] * constants['G']))  # [s]
+        return orbital_period
+
+    def __calculate_revisit_time(self):  # Calculation based off method in Crisp, Livadiotti, Roberts 2018
+        drift = self.orbital_period * constants["wE"] * 180 / math.pi
+
+        foundPass = False
+        num_pass = 1
+        revisit_threshold = 30
+        step = self.num_satellites
+        revisit_time = 0
+        while not foundPass:
+            pass_drift = []
+            lambda_j = (drift * num_pass)/step
+            for i in range(self.num_planes):
+                lambda_plane = []
+                lambda_p = lambda_j + 360 * i * ((1 / self.num_planes) + (self.phasing / self.num_satellites))
+                lambda_plane.append(int(lambda_p))
+                for j in range(1, self.sats_per_plane):
+                    lambda_s = lambda_p + (j / self.sats_per_plane) * drift
+                    lambda_plane.append(int(lambda_s))
+                pass_drift.append(lambda_plane)
+            pass_drift_np = (np.array(pass_drift) % 360).flatten()
+
+            pass_drift_np_indices = pass_drift_np > 180
+            pass_drift_np[pass_drift_np_indices] = 360 - pass_drift_np[pass_drift_np_indices]
+
+            if np.any(pass_drift_np < revisit_threshold):
+                foundPass = True
+                print("Number of passes for revisit within threshold of {0} degrees : {1}".format(revisit_threshold, num_pass))
+                revisit_time = self.orbital_period*num_pass/step
+                print("Revisit time is {0} hrs".format(revisit_time/3600))
+
+            else:
+                num_pass += 1
+
+        return revisit_time
 
     def __repr__(self):
         return "{0}, {1}, {2}, {3}, {4}, {5}, {6}, name={7}, starting_number={8}".format(self.num_satellites,
@@ -191,10 +232,13 @@ class SOCConstellation(Constellation):  # This is really just a part of a walker
         self.perigee_positions = self.__perigee_positions()
         self.ta = self.__calculate_ta()
         self.satellites = self.__build_satellites()
-        self.longitudinal_drift = self.__calculate_longitudinal_drift()
 
     def __calculate_earth_coverage(self):
-        x = self.altitude * math.tan((math.pi / 180) * self.beam_width / 2)
+        half_width = (self.beam_width / 2) * math.pi / 180
+        max_width = math.atan(heavenly_body_radius[self.focus] / (self.altitude + heavenly_body_radius[self.focus]))
+        if half_width > max_width:
+            half_width = max_width
+        x = self.altitude * math.tan(half_width)
         theta = math.asin(x / heavenly_body_radius[self.focus])
         r = heavenly_body_radius[self.focus] * theta
         return r, theta
@@ -258,10 +302,6 @@ class SOCConstellation(Constellation):  # This is really just a part of a walker
                                             self.perigee_positions[j], self.ta[i * self.sats_per_street + j],
                                             self.beam_width, focus=self.focus, rads=False))
         return satellites
-
-    def __calculate_longitudinal_drift(self):
-        drift = self.orbital_period * constants["wE"] * 180 / math.pi
-        return drift
 
     def __repr__(self):
         return "{0}, {1}, {2}, {3}, {4}".format(self.num_satellites,
@@ -331,14 +371,13 @@ class FlowerConstellation(Constellation):
         raan = [0]
         M = [0]
         v = [0]
-        testList = [[0, 0]]
         for idx in range(1, min(self.max_sats, self.num_satellites)):
             raan_i = (raan[idx - 1] + self.raan_spacing)
             if raan_i < 0:
                 raan_i = 360 + raan_i
             raan.append(raan_i)
             M_i = M[idx - 1] + self.mean_anomaly_spacing
-            if (abs(M_i) > 360):
+            if abs(M_i) > 360:
                 M_i = M_i % 360
             if M_i < 0:
                 M_i = 360 + M_i
@@ -377,7 +416,6 @@ class FlowerConstellation(Constellation):
 
     def representation(self, representation_type="flower"):
         if representation_type == "flower":
-            i = self.inclination
             return "{0}-{1}-{2}-{3}-{4} Flower".format(self.num_petals, self.num_days, self.num_satellites,
                                                        self.phasing_n,
                                                        self.phasing_d)
