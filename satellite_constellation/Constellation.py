@@ -152,15 +152,17 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
 
     def __calculate_revisit_time(self):  # Calculation based off method in Crisp, Livadiotti, Roberts 2018
         drift = self.orbital_period * constants["wE"] * 180 / math.pi
+        print(self.orbital_period/(24*60*60))
 
         foundPass = False
         num_pass = 1
-        revisit_threshold = 30
-        step = self.num_satellites
-        revisit_time = 0
+        revisit_threshold = 5
+        step = self.num_planes
+        revisit_time = 10
+        print("Checking {0} times every body rotation".format(step))
         while not foundPass:
             pass_drift = []
-            lambda_j = (drift * num_pass)/step
+            lambda_j = (drift * num_pass)
             for i in range(self.num_planes):
                 lambda_plane = []
                 lambda_p = lambda_j + 360 * i * ((1 / self.num_planes) + (self.phasing / self.num_satellites))
@@ -169,16 +171,21 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
                     lambda_s = lambda_p + (j / self.sats_per_plane) * drift
                     lambda_plane.append(int(lambda_s))
                 pass_drift.append(lambda_plane)
-            pass_drift_np = (np.array(pass_drift) % 360).flatten()
+            print(pass_drift)
+            check_ang = 360/(self.num_planes*2)
+            pass_drift_np = (np.array(pass_drift) % check_ang).flatten()
 
-            pass_drift_np_indices = pass_drift_np > 180
-            pass_drift_np[pass_drift_np_indices] = 360 - pass_drift_np[pass_drift_np_indices]
+            pass_drift_np_indices = pass_drift_np > check_ang/2
+            pass_drift_np[pass_drift_np_indices] = check_ang - pass_drift_np[pass_drift_np_indices]
+            # print(pass_drift)
 
             if np.any(pass_drift_np < revisit_threshold):
                 foundPass = True
-                print("Number of passes for revisit within threshold of {0} degrees : {1}".format(revisit_threshold, num_pass))
-                revisit_time = self.orbital_period*num_pass/step
-                print("Revisit time is {0} hrs".format(revisit_time/3600))
+                print("Number of passes for revisit within threshold of {0} degrees : {1}".format(revisit_threshold,
+                                                                                                  num_pass))
+                revisit_time = (self.orbital_period * (num_pass))/step
+                print("Revisit time is {0} hrs".format(revisit_time / 3600))
+                print(pass_drift_np)
 
             else:
                 num_pass += 1
