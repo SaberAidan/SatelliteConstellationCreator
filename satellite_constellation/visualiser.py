@@ -17,16 +17,17 @@ def draw_walker(walker_constellation):
 
     fig = plt.figure()
 
-    perspectives = [[0, 0], [90, 0], [45, 45]]
+    perspectives = [[0, 0], [0, 45], [90, 0], [60,60]]
 
     ax = [plt.subplot(2, 2, 1, projection='3d'), plt.subplot(2, 2, 2, projection='3d'),
-          plt.subplot(2, 2, 3, projection='3d')]
-    for idx in range(3):
+          plt.subplot(2, 2, 3, projection='3d'), plt.subplot(2, 2, 4, projection='3d')]
+    for idx in range(4):
+
         ax[idx].view_init(elev=perspectives[idx][0], azim=perspectives[idx][1])
         ax[idx].set_xlim(-r, r)
         ax[idx].set_ylim(-r, r)
         ax[idx].set_zlim(-r, r)
-        ax[idx].plot(x1, y1, z1, '--', linewidth=0.1, color='r')  # Plot equatorial circle
+        ax[idx].plot(x1, y1, z1, '--', linewidth=1, color='r')  # Plot equatorial circle
         ax[idx].zaxis.set_tick_params(labelsize=3)
         ax[idx].xaxis.set_tick_params(labelsize=3)
         ax[idx].yaxis.set_tick_params(labelsize=3)
@@ -34,10 +35,17 @@ def draw_walker(walker_constellation):
         ax[idx].set_ylabel("Y", fontsize=3)
         ax[idx].set_zlabel("Z", fontsize=3)
 
+        # Plot target at revisit time
+        xp, yp, zp = (r, 0, 0)
+        target_ang = (walker_constellation.revisit_time / (24*60*60)) * 2 * math.pi
+        target_coords = np.array([xp, yp, zp])
+        ax[idx].scatter(xp, yp, zp, color='black', marker='x')
+        target_coords = rotate(target_coords, target_ang, 'z')
+        ax[idx].scatter(target_coords[0], target_coords[1], target_coords[2], color='green', marker='x')
+
         for idy in range(walker_constellation.num_planes):  # Plot orbital planes
             ang = idy * plane_range / walker_constellation.num_planes
             t = np.linspace(0, 2 * math.pi, 100)
-            plt.plot(r * np.cos(t), r * np.sin(t), 0)
             x, y, z = r * np.cos(t), r * np.sin(t), 0 * t
             for idz in range(100):
                 coords = np.array([x[idz], y[idz], z[idz]])
@@ -56,7 +64,7 @@ def draw_walker(walker_constellation):
                                            (walker_constellation.perigee_positions[
                                                 ctr] +
                                             + walker_constellation.ta[ctr]
-                                            + walker_constellation.raan[ctr]) * math.pi / 180)
+                                            ) * math.pi / 180)
                 coords = np.array([x_i, y_i, z_i])
                 coords = rotate(coords, walker_constellation.inclination * math.pi / 180, 'x')
                 coords = rotate(coords, (walker_constellation.raan[ctr]) * math.pi / 180, 'z')
@@ -94,6 +102,16 @@ def draw_flower(flower_constellation):
         ax[idx].plot(x1, y1, z1, '--', linewidth=0.1, color='r')  # Plot equatorial circle
         ax[idx].plot(x2, y2, z2, '--', linewidth=0.1, color='r')  # Plot equatorial circle
         ax[idx].plot(x3, y3, z3, '--', linewidth=0.1, color='r')  # Plot equatorial circle
+
+        # Plot target at revisit time
+        xp, yp, zp = (6371*10**3, 0, 0)
+        target_ang = (flower_constellation.revisit_time)* 2 * math.pi
+        target_coords = np.array([xp, yp, zp])
+        ax[idx].scatter(xp, yp, zp, color='black', marker='x')
+        target_coords = rotate(target_coords, target_ang, 'z')
+        ax[idx].scatter(target_coords[0], target_coords[1], target_coords[2], color='green', marker='x')
+
+
         ax[idx].zaxis.set_tick_params(labelsize=3)
         ax[idx].xaxis.set_tick_params(labelsize=3)
         ax[idx].yaxis.set_tick_params(labelsize=3)
