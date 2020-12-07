@@ -151,15 +151,18 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
         return orbital_period
 
     def __calculate_revisit_time(self):  # Calculation based off method in Crisp, Livadiotti, Roberts 2018
-        drift = self.orbital_period * constants["wE"] * 180 / math.pi
-        print(self.orbital_period/(24*60*60))
 
         foundPass = False
         num_pass = 1
-        revisit_threshold = 5
+        revisit_threshold = 20
         step = self.num_planes
-        revisit_time = 10
-        print("Checking {0} times every body rotation".format(step))
+        revisit_time = 0
+        ta_step = 360 / step
+        ta = np.array(np.add(self.ta,self.perigee_positions), dtype=float)
+
+        drift = self.orbital_period * constants["wE"] * 180 / math.pi
+        drift = drift / step
+
         while not foundPass:
             pass_drift = []
             lambda_j = (drift * num_pass)
@@ -171,21 +174,25 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
                     lambda_s = lambda_p + (j / self.sats_per_plane) * drift
                     lambda_plane.append(int(lambda_s))
                 pass_drift.append(lambda_plane)
-            print(pass_drift)
-            check_ang = 360/(self.num_planes*2)
+            check_ang = 360 / self.num_planes
             pass_drift_np = (np.array(pass_drift) % check_ang).flatten()
 
-            pass_drift_np_indices = pass_drift_np > check_ang/2
+            pass_drift_np_indices = pass_drift_np > check_ang / 2
             pass_drift_np[pass_drift_np_indices] = check_ang - pass_drift_np[pass_drift_np_indices]
-            # print(pass_drift)
+            ta += ta_step
+            ta_check = ta % 180
 
-            if np.any(pass_drift_np < revisit_threshold):
+            print("Ta = {0}, ta_check = {1}".format(ta,ta_check))
+            print("Long Drift = {0}".format(pass_drift))
+            print("Long Drift Assess = {0}".format(pass_drift_np))
+
+            if np.any(pass_drift_np < revisit_threshold) and np.any(ta_check < revisit_threshold):
+
                 foundPass = True
                 print("Number of passes for revisit within threshold of {0} degrees : {1}".format(revisit_threshold,
                                                                                                   num_pass))
-                revisit_time = (self.orbital_period * (num_pass))/step
+                revisit_time = (self.orbital_period * num_pass) / step
                 print("Revisit time is {0} hrs".format(revisit_time / 3600))
-                print(pass_drift_np)
 
             else:
                 num_pass += 1
@@ -361,7 +368,6 @@ class FlowerConstellation(Constellation):
         return self.num_days, max_sats
 
     def __calculate_num_orbits(self):
-        # return math.floor(self.num_satellites / self.num_days)
         return self.phasing_d
 
     def __calculate_spacing(self):
