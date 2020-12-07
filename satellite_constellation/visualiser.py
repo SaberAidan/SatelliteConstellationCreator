@@ -196,10 +196,11 @@ def draw_plotly(walker_constellation):
         for idz in range(1, sat_coords.shape[0]):
             if idz != idy:
                 temp_coords = np.append([sat_coords[idy, :]], [sat_coords[idz, :]], axis=0)
-                # if sphere_intercept(temp_coords[0], temp_coords[1], 6371):
-                #     fig.add_trace(go.Scatter3d(x=temp_coords[:,0], y=temp_coords[:,1], z=temp_coords[:,2], mode='lines',
-                #                                name='satellite ' + str(idy) ,showlegend= False,  line=dict(color='red', width=0.5)))
-                if not sphere_intercept(temp_coords[0], temp_coords[1], 6371):
+                if sphere_intercept(temp_coords[0], temp_coords[1], heavenly_body_radius[
+                walker_constellation.focus]): fig.add_trace(go.Scatter3d(x=temp_coords[:,0], y=temp_coords[:,1],
+                z=temp_coords[:,2], mode='lines', name='satellite ' + str(idy) ,showlegend= False,
+                line=dict(color='red', width=0.5)))
+                if not sphere_intercept(temp_coords[0], temp_coords[1], heavenly_body_radius[walker_constellation.focus]):
                     fig.add_trace(
                         go.Scatter3d(x=temp_coords[:, 0], y=temp_coords[:, 1], z=temp_coords[:, 2], mode='lines',
                                      name='satellite ' + str(idy), showlegend=False,

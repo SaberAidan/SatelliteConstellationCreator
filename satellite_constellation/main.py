@@ -3,7 +3,7 @@ import plotly as ply
 import plotly.graph_objects as go
 
 if __name__ == '__main__':
-    myWalker = WalkerConstellation(10, 3, 2, 45, 20000, 0, 45)
+    myWalker = WalkerConstellation(5, 5, 5, 45, 20000, 0, 45)
     # draw_walker(myWalker)
     draw_plotly(myWalker)
     # for satellite in myWalker.satellites:

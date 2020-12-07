@@ -118,7 +118,7 @@ def rotate(vec, ang, ax='x', rpy=[0, 0, 0]):
 
 def sphere_intercept(P1, P2, R):
     x1 = P1[0]
-    x2 = P2[1]
+    x2 = P2[0]
     y1 = P1[1]
     y2 = P2[1]
     z1 = P1[2]
@@ -126,11 +126,10 @@ def sphere_intercept(P1, P2, R):
 
     a = math.pow(x2 - x1, 2) + math.pow(y2 - y1, 2) + math.pow(z2 - z1, 2)
     b = 2 * (x1 * (x2 - x1) + y1 * (y2 - y1) + z1 * (z2 - z1))
-    c = np.sum(P1 ** 2) - math.pow(R, 2)
+    c = math.pow(x1, 2) + math.pow(y1, 2) + math.pow(z1, 2) - math.pow(R, 2)
 
     determinant = math.pow(b, 2) - 4 * a * c
     if determinant < 0:
-        # print(determinant)
         return False
     elif determinant == 0:
         return True
