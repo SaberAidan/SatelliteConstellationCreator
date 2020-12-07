@@ -1,4 +1,5 @@
 from __init__ import add_parent_directory  # Needed for running tests in pipelines
+
 if __name__ == "__main__":
     add_parent_directory()  # This must stay prior to the satellite_constellation imports
 from satellite_constellation.Constellation import *

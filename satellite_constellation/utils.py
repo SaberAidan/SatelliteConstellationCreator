@@ -4,6 +4,7 @@
 import math
 import numpy as np
 
+
 def mod(x, y):
     """
     Mappable modulo function
@@ -29,17 +30,17 @@ heavenly_body_radius = {  # [km]
 }
 
 heavenly_body_mass = {  # [kg]
-    "earth": 5.972*10**24,
-    "luna": 73.46*10**21,
-    "mars": 641.71*10**21,
-    "venus": 4867.5*10**21,
-    "mercury": 330.11*10**21,
-    "sol": 1.9885*10**30,
-    "jupiter": 1.8982*10**27,
-    "saturn": 5.6834*10**26,
-    "uranus": 8.6810*10**25 ,
-    "neptune": 1.02413*10**26,
-    "pluto": 13.03*10**21,
+    "earth": 5.972 * 10 ** 24,
+    "luna": 73.46 * 10 ** 21,
+    "mars": 641.71 * 10 ** 21,
+    "venus": 4867.5 * 10 ** 21,
+    "mercury": 330.11 * 10 ** 21,
+    "sol": 1.9885 * 10 ** 30,
+    "jupiter": 1.8982 * 10 ** 27,
+    "saturn": 5.6834 * 10 ** 26,
+    "uranus": 8.6810 * 10 ** 25,
+    "neptune": 1.02413 * 10 ** 26,
+    "pluto": 13.03 * 10 ** 21,
 }
 
 heavenly_body_period = {  # [days]
@@ -57,26 +58,29 @@ heavenly_body_period = {  # [days]
 }
 
 constants = {
-    "G" : 6.67408*10**(-11), # Gravitational constant [m^3 kg^-1 s^-2]
-    "wE" : 7.2921159*10**(-5), # Earth angular velocity [rad/s]
-    "J2E" : 10826269*10**(-3), # Earth J2 constant
+    "G": 6.67408 * 10 ** (-11),  # Gravitational constant [m^3 kg^-1 s^-2]
+    "wE": 7.2921159 * 10 ** (-5),  # Earth angular velocity [rad/s]
+    "J2E": 10826269 * 10 ** (-3),  # Earth J2 constant
 }
+
 
 def proper_round(num, dec=0):  # Add exception check for no decimal point found
 
-    num = str(num)[:str(num).index('.')+dec+2]
-    if num[-1]>='5':
-        return float(num[:-2-(not dec)]+str(int(num[-2-(not dec)])+1))
+    num = str(num)[:str(num).index('.') + dec + 2]
+    if num[-1] >= '5':
+        return float(num[:-2 - (not dec)] + str(int(num[-2 - (not dec)]) + 1))
     return float(num[:-1])
+
 
 def polar2cart(r, phi, theta):
     return [
-         r * math.sin(phi) * math.cos(theta),
-         r * math.sin(theta) * math.sin(phi),
-         r * math.cos(phi)
+        r * math.sin(phi) * math.cos(theta),
+        r * math.sin(theta) * math.sin(phi),
+        r * math.cos(phi)
     ]
 
-def rotate(vec, ang, ax='x', rpy= [0,0,0]):
+
+def rotate(vec, ang, ax='x', rpy=[0, 0, 0]):
     if ax == 'x':
         r_x = np.array([[1, 0, 0],
                         [0, math.cos(ang), -1 * math.sin(ang)],
@@ -93,24 +97,20 @@ def rotate(vec, ang, ax='x', rpy= [0,0,0]):
                         [0, 0, 1]])
         return np.matmul(r_z, vec)
     elif ax == 'c':
-        ang_yaw, ang_pitch, ang_roll = rpy[2],rpy[1],rpy[0]
-        ang_yaw *= math.pi/180
-        ang_pitch *= math.pi/180
-        ang_roll *= math.pi/180
+        ang_yaw, ang_pitch, ang_roll = rpy[2], rpy[1], rpy[0]
+        ang_yaw *= math.pi / 180
+        ang_pitch *= math.pi / 180
+        ang_roll *= math.pi / 180
         r_yaw = np.array([[1, 0, 0],
-                        [0, math.cos(ang_yaw), -1 * math.sin(ang_yaw)],
-                        [0, math.sin(ang_yaw), math.cos(ang_yaw)]])
+                          [0, math.cos(ang_yaw), -1 * math.sin(ang_yaw)],
+                          [0, math.sin(ang_yaw), math.cos(ang_yaw)]])
         r_pitch = np.array([[math.cos(ang_pitch), 0, math.sin(ang_pitch)],
-                        [0, 1, 0],
-                        [-math.sin(ang_pitch), 0, math.cos(ang_pitch)]])
+                            [0, 1, 0],
+                            [-math.sin(ang_pitch), 0, math.cos(ang_pitch)]])
         r_roll = np.array([[math.cos(ang_roll), 0, math.sin(ang_roll)],
-                        [0, 1, 0],
-                        [-math.sin(ang_roll), 0, math.cos(ang_roll)]])
-        r_c = np.matmul(r_yaw,r_pitch)
-        r_c = np.matmul(r_c,r_roll)
-        r_c = np.matmul(r_c,vec)
+                           [0, 1, 0],
+                           [-math.sin(ang_roll), 0, math.cos(ang_roll)]])
+        r_c = np.matmul(r_yaw, r_pitch)
+        r_c = np.matmul(r_c, r_roll)
+        r_c = np.matmul(r_c, vec)
         return r_c
-
-
-
-
