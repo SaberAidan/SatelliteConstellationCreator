@@ -1,5 +1,4 @@
 
-
 class ConstellationNumberError(Exception):
     pass
 
@@ -33,4 +32,8 @@ class BeamError(Exception):
 
 
 class FocusError(Exception):
+    pass
+
+
+class MaxSatellitesExceededError(Exception):
     pass
