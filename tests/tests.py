@@ -112,7 +112,7 @@ class TestWalker(unittest.TestCase):
 class TestStreets(unittest.TestCase):
 
     def setUp(self):
-        self.streets_constellation = SOCConstellation(1, 10, 1500, 60, [20], 0.8, 100)
+        self.streets_constellation = SOCConstellation(1, 5, 1500, 60, [20], 0.8, 100)
 
     def test_perigee(self):
         self.assertAlmostEqual(self.streets_constellation.perigee, 7871, 3)
@@ -130,7 +130,7 @@ class TestStreets(unittest.TestCase):
         self.assertAlmostEqual(self.streets_constellation.earth_coverage_angle, 0.136, 3)
 
     def test_required_satellites_by_coverage(self):
-        self.assertAlmostEqual(self.streets_constellation.num_satellites, 30)
+        self.assertAlmostEqual(self.streets_constellation.num_satellites, 25)
 
     def test_required_satellites_by_period(self):
         streets_constellation = SOCConstellation(1, 10, 1500, 60, [20], 0.8, 7770)

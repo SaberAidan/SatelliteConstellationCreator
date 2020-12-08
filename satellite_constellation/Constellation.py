@@ -287,17 +287,33 @@ class SOCConstellation(Constellation):  # This is really just a part of a walker
         x = self.altitude * math.tan(half_width)
         theta = math.asin(x / heavenly_body_radius[self.focus])
         r = heavenly_body_radius[self.focus] * theta
-        return r, theta
+        return r, theta * 2
 
     def __calculate_spacing(self):
         street_width = heavenly_body_radius[self.focus] * self.street_width * math.pi / 180
-        # print(self.earth_coverage_radius,street_width)
         if street_width > self.earth_coverage_radius:
             print("Street width larger than maximum width of coverage")
             street_width = self.earth_coverage_radius
         y = math.sqrt(math.pow(self.earth_coverage_radius, 2) - math.pow(street_width / 2, 2))
         ang_spacing = 2 * y / heavenly_body_radius[self.focus]
         return y, ang_spacing
+
+    # def __calculate_spacing(self):
+    #     street_width = heavenly_body_radius[self.focus] * self.street_width * math.pi / 180
+    #     if street_width > self.earth_coverage_radius:
+    #         print("Street width larger than maximum width of coverage")
+    #         street_width = self.earth_coverage_radius
+    #
+    #     cos_alpha = math.tan(street_width/2) * (1 / math.tan(self.earth_coverage_radius))
+    #     alpha = math.acos(cos_alpha)
+    #     sin_a = math.sin(alpha) * math.sin(self.earth_coverage_radius)
+    #     a = abs(math.asin(sin_a))*heavenly_body_radius[self.focus]
+    #     print(alpha, a)
+    #     print(2*a/heavenly_body_radius[self.focus])
+    #     ang_spacing = 2*a/heavenly_body_radius[self.focus]
+    #
+    #     # print(math.pow(self.earth_coverage_radius, 2) - 1/math.tan( heavenly_body_radius[self.focus]))
+    #     return 2*a, ang_spacing
 
     def __calculate_orbit_params(self):
         perigee = heavenly_body_radius[self.focus] + self.altitude  # [km]
@@ -336,10 +352,16 @@ class SOCConstellation(Constellation):  # This is really just a part of a walker
         return ta
 
     def __perigee_positions(self):
-        perigees = list(range(0, 360, int(360 / self.sats_per_street)))
+        phase = self.true_spacing / self.num_streets
+        phase = self.true_spacing
+
+        perigees = [0] * self.sats_per_street
         all_perigees = []
-        for i in range(self.num_satellites):
+        for j in range(self.sats_per_street):
+            perigees[j] = j * phase
+        for i in range(self.num_streets):
             all_perigees.extend(perigees)
+
         return all_perigees
 
     def __build_satellites(self):
@@ -382,6 +404,7 @@ class SOCConstellation(Constellation):  # This is really just a part of a walker
             average_links = np.append(average_links, ctr)
             # print(ctr)
         return math.floor(np.mean(average_links))
+
 
     def __repr__(self):
         return "{0}, {1}, {2}, {3}, {4}".format(self.num_satellites,
