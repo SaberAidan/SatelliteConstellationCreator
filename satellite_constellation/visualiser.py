@@ -156,55 +156,63 @@ def draw_flower_mplib(flower_constellation):
     plt.savefig('../../flower_plot.png', dpi=300, bbox_inches='tight')
 
 
-def draw_walker_plotly(walker_constellation):
+def draw_walker_plotly(walker_constellation, satellites=True, orbits=True, links=False):
     sat_coords = np.array([[0, 0, 0]])
     r = walker_constellation.altitude + heavenly_body_radius[walker_constellation.focus]
     fig = go.Figure()
-    for idy in range(walker_constellation.num_planes):  # Plot orbital planes
-        ang = idy * 360 / walker_constellation.num_planes
-        t = np.linspace(0, 2 * math.pi, 100)
-        x, y, z = r * np.cos(t), r * np.sin(t), 0 * t
-        for idz in range(100):
-            coords = np.array([x[idz], y[idz], z[idz]])
-            rot_coords = rotate(coords, walker_constellation.inclination * math.pi / 180, 'x')
-            rot_coords = rotate(rot_coords, ang * math.pi / 180, 'z')
-            x[idz] = rot_coords[0]
-            y[idz] = rot_coords[1]
-            z[idz] = rot_coords[2]
 
-        fig.add_trace(go.Scatter3d(x=x, y=y, z=z, mode='lines', name='Orbit ' + str(idy + 1)))
+    max_dist = np.array([])
 
-    for idy in range(walker_constellation.num_planes):  # Plot satellites
-        for idz in range(walker_constellation.sats_per_plane):
-            ctr = idz + idy * walker_constellation.sats_per_plane
+    if orbits:
+        for idy in range(walker_constellation.num_planes):  # Plot orbital planes
+            ang = idy * 360 / walker_constellation.num_planes
+            t = np.linspace(0, 2 * math.pi, 100)
+            x, y, z = r * np.cos(t), r * np.sin(t), 0 * t
+            for idz in range(100):
+                coords = np.array([x[idz], y[idz], z[idz]])
+                rot_coords = rotate(coords, walker_constellation.inclination * math.pi / 180, 'x')
+                rot_coords = rotate(rot_coords, ang * math.pi / 180, 'z')
+                x[idz] = rot_coords[0]
+                y[idz] = rot_coords[1]
+                z[idz] = rot_coords[2]
 
-            x_i, y_i, z_i = polar2cart(r, 90 * math.pi / 180,
-                                       (walker_constellation.perigee_positions[
-                                            ctr] +
-                                        + walker_constellation.ta[ctr]
-                                        ) * math.pi / 180)
-            coords = np.array([x_i, y_i, z_i])
-            coords = rotate(coords, walker_constellation.inclination * math.pi / 180, 'x')
-            coords = rotate(coords, (walker_constellation.raan[ctr]) * math.pi / 180, 'z')
-            sat_coords = np.append(sat_coords, [coords], axis=0)
-            fig.add_trace(go.Scatter3d(x=[coords[0]], y=[coords[1]], z=[coords[2]], mode='markers', name='satellite '
-                                                                                                         + str(
-                1 + idz + walker_constellation.sats_per_plane * idy), showlegend=False))
+            fig.add_trace(go.Scatter3d(x=x, y=y, z=z, mode='lines', name='Orbit ' + str(idy + 1)))
+            max_dist = np.append(max_dist, np.max(y))
 
-    for idy in range(1, sat_coords.shape[0]):  # Draw line of sight between satellites
-        for idz in range(1, sat_coords.shape[0]):
-            if idz != idy:
-                temp_coords = np.append([sat_coords[idy, :]], [sat_coords[idz, :]], axis=0)
-                # if sphere_intercept(temp_coords[0], temp_coords[1], heavenly_body_radius[
-                # walker_constellation.focus]): fig.add_trace(go.Scatter3d(x=temp_coords[:,0], y=temp_coords[:,1],
-                # z=temp_coords[:,2], mode='lines', name='satellite ' + str(idy) ,showlegend= False,
-                # line=dict(color='red', width=0.5)))
-                if not sphere_intercept(temp_coords[0], temp_coords[1],
-                                        heavenly_body_radius[walker_constellation.focus]):
-                    fig.add_trace(
-                        go.Scatter3d(x=temp_coords[:, 0], y=temp_coords[:, 1], z=temp_coords[:, 2], mode='lines',
-                                     name='satellite ' + str(idy), showlegend=False,
-                                     line=dict(color='green', width=0.5, dash='dash')))
+    if satellites:
+        for idy in range(walker_constellation.num_planes):  # Plot satellites
+            for idz in range(walker_constellation.sats_per_plane):
+                ctr = idz + idy * walker_constellation.sats_per_plane
+
+                x_i, y_i, z_i = polar2cart(r, 90 * math.pi / 180,
+                                           (walker_constellation.perigee_positions[
+                                                ctr] +
+                                            + walker_constellation.ta[ctr]
+                                            ) * math.pi / 180)
+                coords = np.array([x_i, y_i, z_i])
+                coords = rotate(coords, walker_constellation.inclination * math.pi / 180, 'x')
+                coords = rotate(coords, (walker_constellation.raan[ctr]) * math.pi / 180, 'z')
+                sat_coords = np.append(sat_coords, [coords], axis=0)
+                fig.add_trace(
+                    go.Scatter3d(x=[coords[0]], y=[coords[1]], z=[coords[2]], mode='markers', name='satellite '
+                                                                                                   + str(
+                        1 + idz + walker_constellation.sats_per_plane * idy), showlegend=False))
+
+    if links:
+        for idy in range(1, sat_coords.shape[0]):  # Draw line of sight between satellites
+            for idz in range(1, sat_coords.shape[0]):
+                if idz != idy:
+                    temp_coords = np.append([sat_coords[idy, :]], [sat_coords[idz, :]], axis=0)
+                    # if sphere_intercept(temp_coords[0], temp_coords[1], heavenly_body_radius[
+                    # walker_constellation.focus]): fig.add_trace(go.Scatter3d(x=temp_coords[:,0], y=temp_coords[:,1],
+                    # z=temp_coords[:,2], mode='lines', name='satellite ' + str(idy) ,showlegend= False,
+                    # line=dict(color='red', width=0.5)))
+                    if not sphere_intercept(temp_coords[0], temp_coords[1],
+                                            heavenly_body_radius[walker_constellation.focus]):
+                        fig.add_trace(
+                            go.Scatter3d(x=temp_coords[:, 0], y=temp_coords[:, 1], z=temp_coords[:, 2], mode='lines',
+                                         name='satellite ' + str(idy), showlegend=False,
+                                         line=dict(color='green', width=0.5, dash='dash')))
 
     r = heavenly_body_radius[walker_constellation.focus]
     pi = np.pi
@@ -217,10 +225,20 @@ def draw_walker_plotly(walker_constellation):
 
     fig.add_trace(go.Surface(x=x, y=y, z=z, name='Earth', showlegend=False))
 
+    max_dist = np.append(max_dist, np.max(y))
+    max_val = np.max(max_dist)
+
+    fig.update_layout(
+        scene=dict(
+            xaxis=dict(range=[-max_val - 5000, max_val + 5000], ),
+            yaxis=dict(range=[-max_val - 5000, max_val + 5000], ),
+            zaxis=dict(range=[-max_val - 5000, max_val + 5000]))
+    )
+
     fig.show()
 
 
-def draw_flower_plotly(flower_constellation):
+def draw_flower_plotly(flower_constellation, satellites=True, orbits=True, links=False):
     sat_coords = np.array([[0, 0, 0]])
 
     fig = go.Figure()
@@ -232,53 +250,55 @@ def draw_flower_plotly(flower_constellation):
 
     t = np.linspace(0, 2 * math.pi, 100)
 
-    max = np.array([])
+    max_dist = np.array([])
 
-    for idy in range(
-            min(flower_constellation.num_orbits, flower_constellation.num_satellites)):  # Plot orbital planes
-        x, y, z = disp + a * np.cos(t), b * np.sin(t), 0 * t
-        for idz in range(100):
-            coords = np.array([x[idz], y[idz], z[idz]]) * 10 ** -3
+    if orbits:
+        for idy in range(
+                min(flower_constellation.num_orbits, flower_constellation.num_satellites)):  # Plot orbital planes
+            x, y, z = disp + a * np.cos(t), b * np.sin(t), 0 * t
+            for idz in range(100):
+                coords = np.array([x[idz], y[idz], z[idz]]) * 10 ** -3
+                coords = rotate(coords, flower_constellation.raan[idy] * math.pi / 180, 'z')
+                coords = rotate(coords, flower_constellation.inclination * math.pi / 180, 'x')
+                x[idz] = coords[0]
+                y[idz] = coords[1]
+                z[idz] = coords[2]
+
+            fig.add_trace(go.Scatter3d(x=x, y=y, z=z, mode='lines', name='Orbit ' + str(idy + 1), showlegend=False))
+            max_dist = np.append(max_dist, np.max(y))
+
+    if satellites:
+        for idy in range(flower_constellation.num_satellites):  # Plot satellites
+            ang = (flower_constellation.true_anomaly[idy] + 180) * math.pi / 180
+            x_i, y_i, z_i = disp + a * np.cos(ang), b * np.sin(ang), 0
+            coords = np.array([x_i, y_i, z_i]) * 10 ** -3
             coords = rotate(coords, flower_constellation.raan[idy] * math.pi / 180, 'z')
             coords = rotate(coords, flower_constellation.inclination * math.pi / 180, 'x')
-            x[idz] = coords[0]
-            y[idz] = coords[1]
-            z[idz] = coords[2]
 
-        fig.add_trace(go.Scatter3d(x=x, y=y, z=z, mode='lines', name='Orbit ' + str(idy + 1), showlegend=False))
-        max = np.append(max, np.max(y))
+            sat_coords = np.append(sat_coords, [coords], axis=0)
 
-    max_val = np.max(max)
-    for idy in range(flower_constellation.num_satellites):  # Plot satellites
-        ang = (flower_constellation.true_anomaly[idy] + 180) * math.pi / 180
-        x_i, y_i, z_i = disp + a * np.cos(ang), b * np.sin(ang), 0
-        coords = np.array([x_i, y_i, z_i]) * 10 ** -3
-        coords = rotate(coords, flower_constellation.raan[idy] * math.pi / 180, 'z')
-        coords = rotate(coords, flower_constellation.inclination * math.pi / 180, 'x')
+            fig.add_trace(go.Scatter3d(x=[coords[0]], y=[coords[1]], z=[coords[2]], mode='markers', name='satellite '
+                                                                                                         + str(
+                1 + idy), showlegend=False))
 
-        sat_coords = np.append(sat_coords, [coords], axis=0)
-
-        fig.add_trace(go.Scatter3d(x=[coords[0]], y=[coords[1]], z=[coords[2]], mode='markers', name='satellite '
-                                                                                                     + str(
-            1 + idy), showlegend=False))
-
-    for idy in range(1, sat_coords.shape[0]):  # Draw line of sight between satellites
-        for idz in range(1, sat_coords.shape[0]):
-            if idz != idy:
-                temp_coords = np.append([sat_coords[idy, :]], [sat_coords[idz, :]], axis=0)
-                # if sphere_intercept(temp_coords[0], temp_coords[1], heavenly_body_radius[
-                #     flower_constellation.focus]): fig.add_trace(go.Scatter3d(x=temp_coords[:, 0], y=temp_coords[:, 1],
-                #                                                              z=temp_coords[:, 2], mode='lines',
-                #                                                              name='satellite ' + str(idy),
-                #                                                              showlegend=False,
-                #                                                              line=dict(color='red', width=0.5,
-                #                                                                        dash='dash')))
-                if not sphere_intercept(temp_coords[0], temp_coords[1],
-                                        heavenly_body_radius[flower_constellation.focus]):
-                    fig.add_trace(
-                        go.Scatter3d(x=temp_coords[:, 0], y=temp_coords[:, 1], z=temp_coords[:, 2], mode='lines',
-                                     name='satellite ' + str(idy), showlegend=False,
-                                     line=dict(color='green', width=0.5, dash='dash')))
+    if satellites and links:
+        for idy in range(1, sat_coords.shape[0]):  # Draw line of sight between satellites
+            for idz in range(1, sat_coords.shape[0]):
+                if idz != idy:
+                    temp_coords = np.append([sat_coords[idy, :]], [sat_coords[idz, :]], axis=0)
+                    # if sphere_intercept(temp_coords[0], temp_coords[1], heavenly_body_radius[
+                    #     flower_constellation.focus]): fig.add_trace(go.Scatter3d(x=temp_coords[:, 0], y=temp_coords[:, 1],
+                    #                                                              z=temp_coords[:, 2], mode='lines',
+                    #                                                              name='satellite ' + str(idy),
+                    #                                                              showlegend=False,
+                    #                                                              line=dict(color='red', width=0.5,
+                    #                                                                        dash='dash')))
+                    if not sphere_intercept(temp_coords[0], temp_coords[1],
+                                            heavenly_body_radius[flower_constellation.focus]):
+                        fig.add_trace(
+                            go.Scatter3d(x=temp_coords[:, 0], y=temp_coords[:, 1], z=temp_coords[:, 2], mode='lines',
+                                         name='satellite ' + str(idy), showlegend=False,
+                                         line=dict(color='green', width=0.5, dash='dash')))
 
     r = heavenly_body_radius[flower_constellation.focus]
 
@@ -292,11 +312,104 @@ def draw_flower_plotly(flower_constellation):
 
     fig.add_trace(go.Surface(x=x, y=y, z=z, name='Earth', showlegend=False))
 
+    max_dist = np.append(max_dist, np.max(y))
+    max_val = np.max(max_dist)
+
     fig.update_layout(
         scene=dict(
-            xaxis=dict(range=[max + 5000, max + 5000], ),
-            yaxis=dict(range=[max + 5000, max + 5000], ),
-            zaxis=dict(range=[max + 5000, max + 5000]))
+            xaxis=dict(range=[-max_val - 5000, max_val + 5000], ),
+            yaxis=dict(range=[-max_val - 5000, max_val + 5000], ),
+            zaxis=dict(range=[-max_val - 5000, max_val + 5000]))
+    )
+
+    fig.show()
+
+
+def draw_soc_plotly(SOC_Constellation, satellites=True, orbits=True, links=False):
+    sat_coords = np.array([[0, 0, 0]])
+    r = SOC_Constellation.altitude + heavenly_body_radius[SOC_Constellation.focus]
+    print(r)
+    fig = go.Figure()
+
+    max_dist = np.array([])
+
+    t = np.linspace(0, 2 * math.pi, 100)
+
+    if orbits:
+        for idy in range(SOC_Constellation.num_streets):  # Plot orbital planes
+            # ang = idy * 360 / SOC_Constellation.num_streets
+            ang = SOC_Constellation.raan[idy]
+            t = np.linspace(0, 2 * math.pi, 100)
+            x, y, z = r * np.cos(t), r * np.sin(t), 0 * t
+            for idz in range(100):
+                coords = np.array([x[idz], y[idz], z[idz]])
+                rot_coords = rotate(coords, SOC_Constellation.inclination * math.pi / 180, 'x')
+                rot_coords = rotate(rot_coords, ang * math.pi / 180, 'z')
+                x[idz] = rot_coords[0]
+                y[idz] = rot_coords[1]
+                z[idz] = rot_coords[2]
+
+            fig.add_trace(go.Scatter3d(x=x, y=y, z=z, mode='lines', name='Orbit ' + str(idy + 1)))
+            max_dist = np.append(max_dist, np.max(y))
+
+    if satellites:
+        for idy in range(SOC_Constellation.num_streets):  # Plot satellites
+            for idz in range(SOC_Constellation.sats_per_street):
+                ctr = idz + idy * SOC_Constellation.sats_per_street
+
+                x_i, y_i, z_i = polar2cart(r, 90 * math.pi / 180,
+                                           (SOC_Constellation.perigee_positions[
+                                                ctr] +
+                                            + SOC_Constellation.ta[ctr]
+                                            ) * math.pi / 180)
+                coords = np.array([x_i, y_i, z_i])
+                coords = rotate(coords, SOC_Constellation.inclination * math.pi / 180, 'x')
+                coords = rotate(coords, (SOC_Constellation.raan[idy]) * math.pi / 180, 'z')
+                sat_coords = np.append(sat_coords, [coords], axis=0)
+                fig.add_trace(
+                    go.Scatter3d(x=[coords[0]], y=[coords[1]], z=[coords[2]], mode='markers', name='satellite '
+                                                                                                   + str(
+                        1 + idz + SOC_Constellation.sats_per_street * idy), showlegend=False))
+
+    if satellites and links:
+        for idy in range(1, sat_coords.shape[0]):  # Draw line of sight between satellites
+            for idz in range(1, sat_coords.shape[0]):
+                if idz != idy:
+                    temp_coords = np.append([sat_coords[idy, :]], [sat_coords[idz, :]], axis=0)
+                    # if sphere_intercept(temp_coords[0], temp_coords[1], heavenly_body_radius[
+                    #     SOC_Constellation.focus]): fig.add_trace(go.Scatter3d(x=temp_coords[:, 0], y=temp_coords[:, 1],
+                    #                                                              z=temp_coords[:, 2], mode='lines',
+                    #                                                              name='satellite ' + str(idy),
+                    #                                                              showlegend=False,
+                    #                                                              line=dict(color='red', width=0.5,
+                    #                                                                        dash='dash')))
+                    if not sphere_intercept(temp_coords[0], temp_coords[1],
+                                            heavenly_body_radius[SOC_Constellation.focus]):
+                        fig.add_trace(
+                            go.Scatter3d(x=temp_coords[:, 0], y=temp_coords[:, 1], z=temp_coords[:, 2], mode='lines',
+                                         name='satellite ' + str(idy), showlegend=False,
+                                         line=dict(color='green', width=0.5, dash='dash')))
+
+    r = heavenly_body_radius[SOC_Constellation.focus]
+
+    pi = np.pi
+    cos = np.cos
+    sin = np.sin
+    phi, theta = np.mgrid[0:pi:101j, 0:2 * pi:101j]
+    x = r * sin(phi) * cos(theta)
+    y = r * sin(phi) * sin(theta)
+    z = r * cos(phi)
+
+    fig.add_trace(go.Surface(x=x, y=y, z=z, name='Earth', showlegend=False))
+
+    max_dist = np.append(max_dist, np.max(y))
+    max_val = np.max(max_dist)
+
+    fig.update_layout(
+        scene=dict(
+            xaxis=dict(range=[-max_val - 5000, max_val + 5000], ),
+            yaxis=dict(range=[-max_val - 5000, max_val + 5000], ),
+            zaxis=dict(range=[-max_val - 5000, max_val + 5000]))
     )
 
     fig.show()
