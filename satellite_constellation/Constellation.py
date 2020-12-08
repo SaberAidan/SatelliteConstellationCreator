@@ -263,6 +263,10 @@ class SOCConstellation(Constellation):  # This is really just a part of a walker
 
     def __calculate_spacing(self):
         street_width = heavenly_body_radius[self.focus] * self.street_width * math.pi / 180
+        # print(self.earth_coverage_radius,street_width)
+        if street_width > self.earth_coverage_radius:
+            print("Street width larger than maximum width of coverage")
+            street_width = self.earth_coverage_radius
         y = math.sqrt(math.pow(self.earth_coverage_radius, 2) - math.pow(street_width / 2, 2))
         ang_spacing = 2 * y / heavenly_body_radius[self.focus]
         return y, ang_spacing
@@ -296,7 +300,8 @@ class SOCConstellation(Constellation):  # This is really just a part of a walker
             return total_satellites, upper, true_spacing
 
     def __calculate_ta(self):
-        phase = 360 / self.num_satellites
+        phase = self.true_spacing/self.num_streets
+        print(phase)
         ta = [0] * self.num_satellites
         for i in range(self.num_streets):
             for j in range(self.sats_per_street):
