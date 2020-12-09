@@ -157,7 +157,7 @@ def draw_flower_mplib(flower_constellation):
 
 
 def draw_walker_plotly(walker_constellation, satellites=True, orbits=True, links=False, sensor_regions=False):
-    sat_coords = np.array([[0, 0, 0]])
+    sat_coords = np.empty([8, 3])
     r = walker_constellation.altitude + heavenly_body_radius[walker_constellation.focus]
     fig = go.Figure()
 
@@ -179,30 +179,34 @@ def draw_walker_plotly(walker_constellation, satellites=True, orbits=True, links
             fig.add_trace(go.Scatter3d(x=x, y=y, z=z, mode='lines', name='Orbit ' + str(idy + 1)))
             max_dist = np.append(math.sqrt(np.sum(coords ** 2)), np.max(y))
 
-
     if satellites:
         for idy in range(walker_constellation.num_planes):  # Plot satellites
             for idz in range(walker_constellation.sats_per_plane):
                 ctr = idz + idy * walker_constellation.sats_per_plane
 
-                x_i, y_i, z_i = polar2cart(r, 90 * math.pi / 180,
-                                           (walker_constellation.perigee_positions[
-                                                ctr] +
-                                            + walker_constellation.ta[ctr]
-                                            ) * math.pi / 180)
-                coords = np.array([x_i, y_i, z_i])
-                coords = rotate(coords, walker_constellation.inclination * math.pi / 180, 'x')
+                x_i, y_i, z_i = 0, 0, 0
+
+                ax1 = np.array([r, 0, 0])
+                ax1 = rotate(ax1, walker_constellation.raan[ctr] * math.pi / 180, 'z')
+                ax2 = rotate(ax1, math.pi / 2, 'z')
+                ax2 = rotate(ax2, walker_constellation.inclination * math.pi / 180, 'custom',
+                             basis=ax1 / math.sqrt(np.sum(ax1 ** 2)))
+                basis = np.cross(ax1 / math.sqrt(np.sum(ax1 ** 2)), ax2 / math.sqrt(np.sum(ax2 ** 2)))
+
+                coords = np.array([r, 0, 0])
                 coords = rotate(coords, (walker_constellation.raan[ctr]) * math.pi / 180, 'z')
-                sat_coords = np.append(sat_coords, [coords], axis=0)
+                coords = rotate(coords, (walker_constellation.perigee_positions[ctr] + walker_constellation.ta[ctr])
+                                * math.pi / 180, 'custom', basis=basis)
+                sat_coords[ctr] = coords
                 fig.add_trace(
-                    go.Scatter3d(x=[coords[0]], y=[coords[1]], z=[coords[2]], mode='markers', name='satellite '
+                    go.Scatter3d(x=[coords[0]], y=[coords[1]], z=[coords[2]], mode='markers', name='real_sat '
                                                                                                    + str(
                         1 + idz + walker_constellation.sats_per_plane * idy), showlegend=False))
 
     if links:
-        for idy in range(1, sat_coords.shape[0]):  # Draw line of sight between satellites
+        for idy in range(0, sat_coords.shape[0]):  # Draw line of sight between satellites
             ctr = 0
-            for idz in range(1, sat_coords.shape[0]):
+            for idz in range(0, sat_coords.shape[0]):
                 if idz != idy:
 
                     temp_coords = np.append([sat_coords[idy, :]], [sat_coords[idz, :]], axis=0)
@@ -214,31 +218,33 @@ def draw_walker_plotly(walker_constellation, satellites=True, orbits=True, links
                                          name='link {0} to {1}'.format(idy, idz), showlegend=False,
                                          line=dict(color='green', width=0.5, dash='dash')))
 
-    # if sensor_regions:
-    #     rE = heavenly_body_radius[walker_constellation.focus]
-    #     t = np.linspace(0, 2 * math.pi, 100)
-    #     # print(walker_constellation.ta)
-    #     # print(walker_constellation.perigee_positions)
-    #
-    #     for idy in range(walker_constellation.num_satellites):  # Plot sensor regions
-    #         projection_coords = np.array([[0, 0, 0]])
-    #
-    #         for idk in range(0, 100):
-    #             coords = np.array(polar2cart(rE, 0.5 / 2, t[idk]))
-    #             coords = rotate(coords, (walker_constellation.perigee_positions[idy] + walker_constellation.ta[
-    #                 idy]) * math.pi / 180, 'x')
-    #             # coords = rotate(coords, walker_constellation.inclination * math.pi / 180, 'x')
-    #
-    #             # coords = rotate(coords, (walker_constellation.raan[idy]) * math.pi / 180, 'z')
-    #             # coords = rotate(coords, walker_constellation.inclination * math.pi / 180, 'x')
-    #             # coords = rotate(coords, (walker_constellation.raan[idy]) * math.pi / 180, 'z')
-    #
-    #             projection_coords = np.append(projection_coords, [coords], axis=0)
-    #
-    #         fig.add_trace(
-    #             go.Scatter3d(x=projection_coords[:, 0], y=projection_coords[:, 1], z=projection_coords[:, 2],
-    #                          mode='lines',
-    #                          name='Projection ' + str(idy), line=dict(color='red', width=5), showlegend=False))
+    if sensor_regions:
+
+        for idy in range(walker_constellation.num_satellites):
+            rE = heavenly_body_radius[walker_constellation.focus]
+            v_r = rE * sat_coords[idy] / math.sqrt(np.sum(sat_coords[idy] ** 2))
+            t = np.linspace(0, 2 * math.pi, 100)
+            projection_coords = np.array([[0, 0, 0]])
+
+            ax1 = np.array([r, 0, 0])
+            ax1 = rotate(ax1, walker_constellation.raan[idy] * math.pi / 180, 'z')
+            ax2 = rotate(ax1, math.pi / 2, 'z')
+            ax2 = rotate(ax2, walker_constellation.inclination * math.pi / 180, 'custom',
+                         basis=ax1 / math.sqrt(np.sum(ax1 ** 2)))
+            basis = np.cross(ax1 / math.sqrt(np.sum(ax1 ** 2)), ax2 / math.sqrt(np.sum(ax2 ** 2)))
+
+            for idk in range(0, 100):
+                coords = np.array(polar2cart(rE, walker_constellation.earth_coverage_angle / 2, t[idk]))
+                coords = rotate(coords, math.pi / 2, 'y')
+                coords = rotate(coords, (walker_constellation.raan[idy]) * math.pi / 180, 'z')
+                coords = rotate(coords, (walker_constellation.perigee_positions[idy] + walker_constellation.ta[idy])
+                                * math.pi / 180, 'custom', basis=basis)
+                projection_coords = np.append(projection_coords, [coords], axis=0)
+
+            fig.add_trace(
+                go.Scatter3d(x=projection_coords[:, 0], y=projection_coords[:, 1], z=projection_coords[:, 2],
+                             mode='lines',
+                             name='Projection ' + str(idy), line=dict(color='red', width=5), showlegend=False))
 
     r = heavenly_body_radius[walker_constellation.focus]
     pi = np.pi
