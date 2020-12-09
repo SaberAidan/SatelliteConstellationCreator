@@ -94,7 +94,7 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
         self.ta = self.__calculate_ta()
         self.orbital_period = self.__calculate_orbit_params()
         self.satellites = self.__build_satellites()
-        self.coverage_area = self.__calculate_simple_coverage()
+        self.earth_coverage_radius, self.earth_coverage_angle, self.coverage_area = self.__calculate_simple_coverage()
         self.revisit_time = self.__calculate_revisit_time()
         self.minimum_revisit = self.__calculate_minimum_revisit()
         self.average_links = self.__calculate_LOS()
@@ -133,7 +133,7 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
         r = heavenly_body_radius[self.focus] * theta
         area = math.pi * math.pow(r, 2)
         total_area = area * self.num_satellites
-        return total_area
+        return r,theta,total_area
 
     def __build_satellites(self):
         satellites = []
@@ -297,23 +297,6 @@ class SOCConstellation(Constellation):  # This is really just a part of a walker
         y = math.sqrt(math.pow(self.earth_coverage_radius, 2) - math.pow(street_width / 2, 2))
         ang_spacing = 2 * y / heavenly_body_radius[self.focus]
         return y, ang_spacing
-
-    # def __calculate_spacing(self):
-    #     street_width = heavenly_body_radius[self.focus] * self.street_width * math.pi / 180
-    #     if street_width > self.earth_coverage_radius:
-    #         print("Street width larger than maximum width of coverage")
-    #         street_width = self.earth_coverage_radius
-    #
-    #     cos_alpha = math.tan(street_width/2) * (1 / math.tan(self.earth_coverage_radius))
-    #     alpha = math.acos(cos_alpha)
-    #     sin_a = math.sin(alpha) * math.sin(self.earth_coverage_radius)
-    #     a = abs(math.asin(sin_a))*heavenly_body_radius[self.focus]
-    #     print(alpha, a)
-    #     print(2*a/heavenly_body_radius[self.focus])
-    #     ang_spacing = 2*a/heavenly_body_radius[self.focus]
-    #
-    #     # print(math.pow(self.earth_coverage_radius, 2) - 1/math.tan( heavenly_body_radius[self.focus]))
-    #     return 2*a, ang_spacing
 
     def __calculate_orbit_params(self):
         perigee = heavenly_body_radius[self.focus] + self.altitude  # [km]
