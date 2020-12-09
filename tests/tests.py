@@ -127,7 +127,7 @@ class TestStreets(unittest.TestCase):
         self.assertAlmostEqual(self.streets_constellation.earth_coverage_radius, 868.7, 1)
 
     def test_earth_angular_coverage(self):
-        self.assertAlmostEqual(self.streets_constellation.earth_coverage_angle, 0.136, 3)
+        self.assertAlmostEqual(self.streets_constellation.earth_coverage_angle, 0.272, 2)
 
     def test_required_satellites_by_coverage(self):
         self.assertAlmostEqual(self.streets_constellation.num_satellites, 25)

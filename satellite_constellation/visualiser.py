@@ -260,6 +260,16 @@ def draw_walker_plotly(walker_constellation, satellites=True, orbits=True, links
     max_dist = np.append(max_dist, np.max(y))
     max_val = np.max(max_dist)
 
+    try:
+        spherical_earth_map = np.load('map_sphere.npy')
+    except FileNotFoundError:
+        pass
+    else:
+        xm, ym, zm = spherical_earth_map.T * 6371
+        fig.add_trace(
+            go.Scatter3d(x=xm, y=ym, z=zm, name='Earth', mode='lines', showlegend=False,
+                         line=dict(color='white', width=1)))
+
     fig.update_layout(
         scene=dict(
             xaxis=dict(range=[-max_val - 5000, max_val + 5000], ),
@@ -339,6 +349,16 @@ def draw_flower_plotly(flower_constellation, satellites=True, orbits=True, links
 
     max_dist = np.append(max_dist, np.max(y))
     max_val = np.max(max_dist)
+
+    try:
+        spherical_earth_map = np.load('map_sphere.npy')
+    except FileNotFoundError:
+        pass
+    else:
+        xm, ym, zm = spherical_earth_map.T * 6371
+        fig.add_trace(
+            go.Scatter3d(x=xm, y=ym, z=zm, name='Earth', mode='lines', showlegend=False,
+                         line=dict(color='white', width=1)))
 
     fig.update_layout(
         scene=dict(
@@ -456,6 +476,16 @@ def draw_soc_plotly(SOC_Constellation, satellites=True, orbits=True, links=False
     z = r * cos(phi)
 
     fig.add_trace(go.Surface(x=x, y=y, z=z, name='Earth', showlegend=False, colorscale='blues'))
+
+    try:
+        spherical_earth_map = np.load('map_sphere.npy')
+    except FileNotFoundError:
+        pass
+    else:
+        xm, ym, zm = spherical_earth_map.T * 6371
+        fig.add_trace(
+            go.Scatter3d(x=xm, y=ym, z=zm, name='Earth', mode='lines', showlegend=False,
+                         line=dict(color='white', width=1)))
 
     max_dist = np.append(max_dist, np.max(y))
     max_val = np.max(max_dist)
