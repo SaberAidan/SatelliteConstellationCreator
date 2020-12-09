@@ -54,11 +54,19 @@ class Constellation:
         return self.as_pigi_output()
 
     def as_pigi_output(self):
-        short_scene = ""
-        for sat in self.satellites:
-            short_scene += sat.as_xml()
 
-        return short_scene
+        sat_list = []
+        json_string = ""
+        for satellite in self.satellites:
+            sat_list.append(satellite.as_PIGI())
+
+        sat_json = {"Satellite": sat_list}
+
+        file_name = "{0}_{1}_sats.json".format(self.name,self.num_satellites)
+
+        return file_name, sat_json
+
+
 
 
 class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit for polar orbits
@@ -77,13 +85,14 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
     """
 
     def __init__(self, num_sats, num_planes, phasing, inclination, altitude,
-                 eccentricity, beam_width, name="Sat", focus="earth", starting_number=0):
+                 eccentricity, beam_width, name="Walker", focus="earth", starting_number=0):
         super(WalkerConstellation, self).__init__(num_sats, 0, altitude, beam_width, eccentricity, inclination, focus,
                                                   name)
         if self.inclination % 90 == 0:
             self.plane_range = 180
         else:
             self.plane_range = 360
+
         self.num_planes = num_planes
         self.phasing = phasing
         self.start_num = starting_number
@@ -105,10 +114,14 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
         return sats_per_plane, corrected_phasing
 
     def __perigee_positions(self):
-        perigees = list(range(0, 360, int(360 / self.sats_per_plane)))
+        # perigees = list(range(0, 360, int(360 / self.sats_per_plane)))
+        ang_lim = 360 - 360 / self.sats_per_plane
+        perigees = np.linspace(0, ang_lim, self.sats_per_plane)
+
         all_perigees = []
         for i in range(self.num_planes):
             all_perigees.extend(perigees)
+
         return all_perigees
 
     def __calculate_raan(self):
@@ -121,6 +134,7 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
         ta = [0] * self.num_satellites
         for i in range(self.sats_per_plane, self.num_satellites):
             ta[i] = ta[i - self.sats_per_plane] + self.correct_phasing
+
         return ta
 
     def __calculate_simple_coverage(self):
@@ -133,7 +147,7 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
         r = heavenly_body_radius[self.focus] * theta
         area = math.pi * math.pow(r, 2)
         total_area = area * self.num_satellites
-        return r,theta,total_area
+        return r, theta, total_area
 
     def __build_satellites(self):
         satellites = []
@@ -142,7 +156,7 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
             sat_name = self.constellation_name + " " + str(sat_num)
             satellites.append(Satellite(sat_name, self.altitude, self.eccentricity, self.inclination, self.raan[i],
                                         self.perigee_positions[i], self.ta[i], self.beam_width, focus=self.focus,
-                                        rads=False))
+                                        rads=False, orbital_period=self.orbital_period))
         return satellites
 
     def __calculate_orbit_params(self):
@@ -260,7 +274,7 @@ class SOCConstellation(Constellation):  # This is really just a part of a walker
     :param focus: Heavenly body at the focus of the orbit, defaults to 'Earth'
     """
 
-    def __init__(self, num_streets, street_width, altitude, beam_width, raan, eccentricity, revisit_time, name="Sat",
+    def __init__(self, num_streets, street_width, altitude, beam_width, raan, eccentricity, revisit_time, name="Streets",
                  focus="earth", starting_number=0):
 
         super(SOCConstellation, self).__init__(0, 0, altitude, beam_width, eccentricity, 90, focus, name)
@@ -355,7 +369,8 @@ class SOCConstellation(Constellation):  # This is really just a part of a walker
                 sat_name = self.name + " " + str(sat_num)
                 satellites.append(Satellite(sat_name, self.altitude, self.eccentricity, self.inclination, self.raan[i],
                                             self.perigee_positions[j], self.ta[i * self.sats_per_street + j],
-                                            self.beam_width, focus=self.focus, rads=False))
+                                            self.beam_width, focus=self.focus, rads=False,
+                                            orbital_period=self.orbital_period))
         return satellites
 
     def __calculate_LOS(self):
@@ -388,7 +403,6 @@ class SOCConstellation(Constellation):  # This is really just a part of a walker
             # print(ctr)
         return math.floor(np.mean(average_links))
 
-
     def __repr__(self):
         return "{0}, {1}, {2}, {3}, {4}".format(self.num_satellites,
                                                 self.altitude, self.eccentricity,
@@ -416,7 +430,7 @@ class FlowerConstellation(Constellation):
     """
 
     def __init__(self, num_petals, num_days, num_satellites, phasing_n, phasing_d, perigee_argument,
-                 inclination, perigee_altitude, beam_width, focus='earth', name="constellation"):
+                 inclination, perigee_altitude, beam_width, focus='earth', name="Flower"):
         super(FlowerConstellation, self).__init__(num_satellites, 0, perigee_altitude, beam_width, 0, inclination,
                                                   focus, name)
         self.num_petals = num_petals
@@ -495,8 +509,8 @@ class FlowerConstellation(Constellation):
         for i in range(self.num_satellites):
             sat_name = i
             satellites.append(Satellite(sat_name, self.altitude, self.eccentricity, self.inclination, self.raan[i],
-                                        -self.true_anomaly[i], self.true_anomaly[i], self.beam_width, self.focus,
-                                        rads=False))
+                                        0, self.true_anomaly[i], self.beam_width, self.focus,
+                                        rads=False, orbital_period=self.orbital_period))
 
         return satellites
 

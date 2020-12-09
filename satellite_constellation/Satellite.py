@@ -10,13 +10,14 @@ import warnings
 class Satellite(object):
 
     def __init__(self, name, altitude, eccentricity, inclination, right_ascension, perigee, ta, beam,
-                 focus="earth", rads=True):
+                 focus="earth", rads=True, orbital_period=0):
         self._name = name
         self._altitude = altitude
         self._focus = focus
         self._true_alt = self.altitude + self.__get_radius()
         self._eccentricity = eccentricity
         self._beam = beam
+        self._orbital_period = orbital_period
 
         if not rads:
             self.inclination = inclination
@@ -137,13 +138,56 @@ class Satellite(object):
         return sat
 
     def as_PIGI(self):
+
+        catalog_number = '00000'
+        classification = 'U'
+        launch_year = 20
+        launch_number = "001"
+        designator = 'A  '
+        epoch_year = 20
+        fractional_day = "{:.8f}".format(343.4040985)
+        d_1_mean_motion = '-.00002182'
+        d_2_mean_motion = ' 00000-0'
+        drag = '-00000-0'
+        ephemeris = 0
+        element_set = '00000'
+
+        inclination = (3 - len(str(self.inclination)))*str(0) + "{:.4f}".format(float(self.inclination))
+        right_ascension = (3 - len(str(self.right_ascension)))*str(0) + "{:.4f}".format(float(self.right_ascension))
+        eccentricity = "0000000"
+        e = "{:.7f}".format(float(self.eccentricity))
+        eccentricity = self.eccentricity*10**7
+        eccentricity = (7 - len(str(int(eccentricity))))*str(0) + "{:.0f}".format(float(eccentricity))
+
+        p = "{:.0f}".format(float(self.perigee))
+        perigee = (3 - len(str(p)))*str(0) + "{:.4f}".format(float(self.perigee))
+
+        m = "{:.0f}".format(float(self.ta))
+        mean_anomaly = (3 - len(m))*str(0) + "{:.4f}".format(float(self.ta))
+
+        mean_motion = 86801/self._orbital_period
+        mean_motion =(2 - len(str(int(mean_motion))))*str(0) + "{:.8f}".format(mean_motion)
+
         sat = {"Name": self.name,
-               "line1": "{0} {1}{2} {3}{4} {5} {6} {7}-{8} {9}-{10} {11} {12}".format(1, 00000, 'U', 98067, "A",
-                                                                                      20343.40409850, -.00002182, 00000,
-                                                                                      0, 00000, 0, 0, 00000),
-               "line2": "{0} {1} {2} {3} {4} {5} {6} {7}{8}{9}".format(2, 00000, self.inclination, self.right_ascension,
-                                                                       self.eccentricity * 100, self.perigee, self.ta,
-                                                                       13.71869444, 56353, 7)}
+               "line1": "{0} {1}{2} {3}{4}{5} {6}{7} {8} {9} {10} {11} {12}".format(
+                   1, catalog_number, classification, launch_year, launch_number, designator, epoch_year,
+                   fractional_day, d_1_mean_motion, d_2_mean_motion, drag
+                   , ephemeris, element_set),
+               "line2": "{0} {1} {2} {3} {4} {5} {6} {7}{8}{9}".format(2, catalog_number, inclination,
+                                                                       right_ascension,
+                                                                       eccentricity, perigee, mean_anomaly,
+                                                                       mean_motion, 56353, 7),
+               "category": 0,
+               "planet": 3,
+               "favourite": False,
+               "groundFov": 90.0,
+               "spaceFov": self.beam,
+               "groundFovEnabled": False,
+               "spaceFovEnabled": False,
+               "orbitLineEnabled": True,
+               "textLabelEnabled": True,
+               "TransferStates": {}
+               }
 
         return sat
 
