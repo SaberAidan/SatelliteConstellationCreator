@@ -3,7 +3,7 @@ A class for creating a satellite object, describing the characteristics of it.
 """
 
 from math import pi
-from .utils import heavenly_body_radius
+from .utils import *
 import warnings
 
 
@@ -133,6 +133,17 @@ class Satellite(object):
                    "Beam Width": self.beam}
         sat['Focus'] = self._focus
         sat['Type'] = 'satellite'
+
+        return sat
+
+    def as_PIGI(self):
+        sat = {"Name": self.name,
+               "line1": "{0} {1}{2} {3}{4} {5} {6} {7}-{8} {9}-{10} {11} {12}".format(1, 00000, 'U', 98067, "A",
+                                                                                      20343.40409850, -.00002182, 00000,
+                                                                                      0, 00000, 0, 0, 00000),
+               "line2": "{0} {1} {2} {3} {4} {5} {6} {7}{8}{9}".format(2, 00000, self.inclination, self.right_ascension,
+                                                                       self.eccentricity * 100, self.perigee, self.ta,
+                                                                       13.71869444, 56353, 7)}
 
         return sat
 
