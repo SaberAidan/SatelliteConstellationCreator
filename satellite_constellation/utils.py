@@ -79,6 +79,14 @@ def polar2cart(r, phi, theta):
         r * math.cos(phi)
     ]
 
+def cart2polar(x,y,z):
+    v = np.array([x,y,z])
+    r = math.sqrt(np.sum(v**2))
+    azimuth = math.atan(y,x)
+    inclination = math.acos(z/r)
+
+    return r, inclination, azimuth
+
 
 def rotate(vec, ang, ax='x', rpy=[0, 0, 0], basis=None):
     if ax == 'x':
@@ -145,3 +153,12 @@ def sphere_intercept(P1, P2, R):
         return True
     else:
         return True
+
+
+def getDistanceFromLatLonInM(lat1, lon1, lat2, lon2):
+    a = math.pow(math.sin((lat2 - lat1) / 2), 2) + math.cos(lat1) * math.cos(lat2) * math.pow(
+        math.sin((lon2 - lon1) / 2), 2)
+
+    return 12742000 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+
