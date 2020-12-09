@@ -80,7 +80,7 @@ def polar2cart(r, phi, theta):
     ]
 
 
-def rotate(vec, ang, ax='x', rpy=[0, 0, 0]):
+def rotate(vec, ang, ax='x', rpy=[0, 0, 0], basis=None):
     if ax == 'x':
         r_x = np.array([[1, 0, 0],
                         [0, math.cos(ang), -1 * math.sin(ang)],
@@ -114,6 +114,16 @@ def rotate(vec, ang, ax='x', rpy=[0, 0, 0]):
         r_c = np.matmul(r_c, r_roll)
         r_c = np.matmul(r_c, vec)
         return r_c
+    elif ax == "custom":
+        ux = basis[0]
+        uy = basis[1]
+        uz = basis[2]
+        a = (1 - math.cos(ang))
+        R = np.array([
+            [math.cos(ang) + math.pow(ux, 2) * a, ux * uy * a - uz * math.sin(ang), ux * uz * a + uy * math.sin(ang)],
+            [ux * uy * a + uz * math.sin(ang), math.cos(ang) + math.pow(uy, 2) * a, uy * uz * a - ux * math.sin(ang)],
+            [uz * ux * a - uy * math.sin(ang), uz * uy * a + ux * math.sin(ang), math.cos(ang) + math.pow(uz, 2) * a]])
+        return np.matmul(R, vec)
 
 
 def sphere_intercept(P1, P2, R):
