@@ -72,7 +72,6 @@ def draw_walker_mplib(walker_constellation):
                 sat_coords = np.append(sat_coords, [coords], axis=0)
                 ax[idx].scatter(coords[0], coords[1], coords[2])
 
-
         for idy in range(1, sat_coords.shape[0]):  # Draw line of sight between satellites
             for idz in range(1, sat_coords.shape[0]):
                 if idz != idy:
@@ -179,53 +178,17 @@ def draw_walker_plotly(walker_constellation, satellites=True, orbits=True, links
             fig.add_trace(go.Scatter3d(x=x, y=y, z=z, mode='lines', name='Orbit ' + str(idy + 1)))
             max_dist = np.append(math.sqrt(np.sum(coords ** 2)), np.max(y))
 
-    # if satellites:
-    #     for idy in range(walker_constellation.num_planes):  # Plot satellites
-    #         for idz in range(walker_constellation.sats_per_plane):
-    #             ctr = idz + idy * walker_constellation.sats_per_plane
-    #
-    #             x_i, y_i, z_i = 0, 0, 0
-    #
-    #             ax1 = np.array([r, 0, 0])
-    #             ax1 = rotate(ax1, walker_constellation.raan[ctr] * math.pi / 180, 'z')
-    #             ax2 = rotate(ax1, math.pi / 2, 'z')
-    #             ax2 = rotate(ax2, walker_constellation.inclination * math.pi / 180, 'custom',
-    #                          basis=ax1 / math.sqrt(np.sum(ax1 ** 2)))
-    #             basis = np.cross(ax1 / math.sqrt(np.sum(ax1 ** 2)), ax2 / math.sqrt(np.sum(ax2 ** 2)))
-    #
-    #             coords = np.array([r, 0, 0])
-    #             coords = rotate(coords, (walker_constellation.raan[ctr]) * math.pi / 180, 'z')
-    #             coords = rotate(coords, (walker_constellation.perigee_positions[ctr] + walker_constellation.ta[ctr])
-    #                             * math.pi / 180, 'custom', basis=basis)
-    #             sat_coords[ctr] = coords
-    #             fig.add_trace(
-    #                 go.Scatter3d(x=[coords[0]], y=[coords[1]], z=[coords[2]], mode='markers', name='real_sat '
-    #                                                                                                + str(
-    #                     1 + idz + walker_constellation.sats_per_plane * idy), showlegend=False))
-
     if satellites:
-        for idy in range(walker_constellation.num_satellites):  # Plot satellites
+        d_sat = 0
 
-                ax1 = np.array([r, 0, 0])
-                ax1 = rotate(ax1, walker_constellation.raan[idy] * math.pi / 180, 'z')
-                ax1_basis = ax1 / math.sqrt(np.sum(ax1 ** 2))
-                ax2 = rotate(ax1, math.pi / 2, 'z')
-                ax2 = rotate(ax2, walker_constellation.inclination * math.pi / 180, 'custom',
-                             basis=ax1 / math.sqrt(np.sum(ax1 ** 2)))
-                ax2_basis = ax2 / math.sqrt(np.sum(ax2 ** 2))
+        for coords in walker_constellation.as_cartesian():
+            sat_coords[d_sat] = coords
 
-                basis = np.cross(ax1 / math.sqrt(np.sum(ax1 ** 2)), ax2 / math.sqrt(np.sum(ax2 ** 2)))
-
-                coords = np.array([r, 0, 0])
-                coords = rotate(coords, (walker_constellation.raan[idy]) * math.pi / 180, 'z')
-                coords = rotate(coords, (walker_constellation.perigee_positions[idy] + walker_constellation.ta[idy])
-                                * math.pi / 180, 'custom', basis=basis)
-
-                sat_coords[idy] = coords
-                fig.add_trace(
-                    go.Scatter3d(x=[coords[0]], y=[coords[1]], z=[coords[2]], mode='markers', name='real_sat '
-                                                                                                   + str(
-                        idy), showlegend=False))
+            fig.add_trace(
+                go.Scatter3d(x=[coords[0]], y=[coords[1]], z=[coords[2]], mode='markers', name='real_sat '
+                                                                                               + str(
+                    d_sat), showlegend=False))
+            d_sat += 1
 
     if links:
         for idy in range(0, sat_coords.shape[0]):  # Draw line of sight between satellites
@@ -258,7 +221,7 @@ def draw_walker_plotly(walker_constellation, satellites=True, orbits=True, links
             basis = np.cross(ax1 / math.sqrt(np.sum(ax1 ** 2)), ax2 / math.sqrt(np.sum(ax2 ** 2)))
 
             for idk in range(0, 100):
-                coords = np.array(polar2cart(rE, walker_constellation.earth_coverage_angle / 2, t[idk]))
+                coords = np.array(polar2cart(rE, walker_constellation.earth_coverage_angle/2, t[idk]))
                 coords = rotate(coords, math.pi / 2, 'y')
                 coords = rotate(coords, (walker_constellation.raan[idy]) * math.pi / 180, 'z')
                 coords = rotate(coords, (walker_constellation.perigee_positions[idy] + walker_constellation.ta[idy])
@@ -334,18 +297,19 @@ def draw_flower_plotly(flower_constellation, satellites=True, orbits=True, links
             max_dist = np.append(math.sqrt(np.sum(coords ** 2)), np.max(y))
 
     if satellites:
-        for idy in range(flower_constellation.num_satellites):  # Plot satellites
-            ang = (flower_constellation.true_anomaly[idy] + 180) * math.pi / 180
-            x_i, y_i, z_i = disp + a * np.cos(ang), b * np.sin(ang), 0
-            coords = np.array([x_i, y_i, z_i]) * 10 ** -3
-            coords = rotate(coords, flower_constellation.raan[idy] * math.pi / 180, 'z')
-            coords = rotate(coords, flower_constellation.inclination * math.pi / 180, 'x')
 
-            sat_coords = np.append(sat_coords, [coords], axis=0)
+        flower_constellation.as_cartesian()
+        if satellites:
+            d_sat = 0
 
-            fig.add_trace(go.Scatter3d(x=[coords[0]], y=[coords[1]], z=[coords[2]], mode='markers', name='satellite '
-                                                                                                         + str(
-                1 + idy), showlegend=False))
+            for coords in flower_constellation.as_cartesian():
+                sat_coords = np.append(sat_coords, [coords], axis=0)
+
+                fig.add_trace(
+                    go.Scatter3d(x=[coords[0]], y=[coords[1]], z=[coords[2]], mode='markers', name='real_sat '
+                                                                                                   + str(
+                        idy), showlegend=False))
+                d_sat += 1
 
     if satellites and links:
         for idy in range(1, sat_coords.shape[0]):  # Draw line of sight between satellites
@@ -433,6 +397,9 @@ def draw_soc_plotly(SOC_Constellation, satellites=True, orbits=True, links=False
                 coords = np.array([x_i, y_i, z_i])
                 coords = rotate(coords, SOC_Constellation.inclination * math.pi / 180, 'x')
                 coords = rotate(coords, (SOC_Constellation.raan[idy]) * math.pi / 180, 'z')
+
+                spherical_coords = cart2polar(coords[0], coords[1], coords[2])
+
                 sat_coords = np.append(sat_coords, [coords], axis=0)
                 fig.add_trace(
                     go.Scatter3d(x=[coords[0]], y=[coords[1]], z=[coords[2]], mode='markers', name='satellite '
@@ -445,7 +412,7 @@ def draw_soc_plotly(SOC_Constellation, satellites=True, orbits=True, links=False
                 projection_coords = np.array([[0, 0, 0]])
                 ctr = idz + idy * SOC_Constellation.sats_per_street
                 for idk in range(0, 100):
-                    coords = np.array(polar2cart(rE, SOC_Constellation.earth_coverage_angle / 2, t[idk]))
+                    coords = np.array(polar2cart(rE, SOC_Constellation.earth_coverage_angle/2, t[idk]))
                     coords = rotate(coords, (SOC_Constellation.perigee_positions[ctr] + SOC_Constellation.ta[
                         ctr] + 90) * math.pi / 180, 'x')
                     coords = rotate(coords, (SOC_Constellation.raan[idy] + 90) * math.pi / 180, 'z')

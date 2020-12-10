@@ -72,22 +72,6 @@ def proper_round(num, dec=0):  # Add exception check for no decimal point found
     return float(num[:-1])
 
 
-def polar2cart(r, phi, theta):
-    return [
-        r * math.sin(phi) * math.cos(theta),
-        r * math.sin(theta) * math.sin(phi),
-        r * math.cos(phi)
-    ]
-
-def cart2polar(x,y,z):
-    v = np.array([x,y,z])
-    r = math.sqrt(np.sum(v**2))
-    azimuth = math.atan(y,x)
-    inclination = math.acos(z/r)
-
-    return r, inclination, azimuth
-
-
 def rotate(vec, ang, ax='x', rpy=[0, 0, 0], basis=None):
     if ax == 'x':
         r_x = np.array([[1, 0, 0],
@@ -155,10 +139,50 @@ def sphere_intercept(P1, P2, R):
         return True
 
 
-def getDistanceFromLatLonInM(lat1, lon1, lat2, lon2):
+def geographic_distance(lat1, lon1, lat2, lon2, radians = False):
+    if not radians:
+        lat1 = lat1*math.pi/180
+        lat2 = lat2*math.pi/180
+        lon2 = lon2*math.pi/180
+        lon1 = lon1*math.pi/180
+
     a = math.pow(math.sin((lat2 - lat1) / 2), 2) + math.cos(lat1) * math.cos(lat2) * math.pow(
         math.sin((lon2 - lon1) / 2), 2)
 
-    return 12742000 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return 12742000 * math.atan2(math.sqrt(a), math.sqrt(1 - a))*10**-3
 
 
+def polar2cart(r, phi, theta):
+    return [
+        r * math.sin(phi) * math.cos(theta),
+        r * math.sin(theta) * math.sin(phi),
+        r * math.cos(phi)
+    ]
+
+
+def cart2polar(x, y, z):
+    v = np.array([x, y, z])
+    r = math.sqrt(np.sum(v ** 2))
+    azimuth = math.atan2(y, x)
+    inclination = math.acos(z / r)
+
+    return r, inclination, azimuth
+
+
+def spherical2geographic(polar, azimuth, radians):
+    if radians:
+        polar = polar * 180 / math.pi
+        azimuth = azimuth * 180 / math.pi
+
+    azimuth = (azimuth + 360) % 360
+
+    if azimuth > 180:
+        azimuth -= 360
+
+    if polar > 180:
+        polar = 360 - polar
+
+    latitude = 90 - polar
+    longitude = azimuth
+
+    return latitude, longitude
