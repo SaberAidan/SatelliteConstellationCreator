@@ -6,6 +6,7 @@ from .utils import *
 import warnings
 import math
 import numpy as np
+import copy
 
 
 class Constellation:
@@ -33,6 +34,136 @@ class Constellation:
         self.focus = focus
         self.name = name
         self.satellites = []
+        self.earth_coverage_radius = 0
+
+    def propagate(self, angle, radians):
+
+        if not radians:
+            angle_r = angle * math.pi / 180
+            angle_d = angle
+        else:
+            angle_r = angle
+            angle_d = angle * 180 / math.pi
+
+        prop_sats = copy.deepcopy(self.satellites)
+        new_sats = []
+
+        for satellite in prop_sats:
+            satellite.ta_r = satellite.ta_r + angle_r
+            satellite.ta = satellite.ta + angle_d
+            new_sats.append(satellite)
+            # print(new_sats)
+
+        return new_sats
+
+    def calculate_revisit(self, target_long, target_lat):
+
+        d_prop = 1
+        tracking = True
+        start_time = -1
+        finish_time = -1
+        gap_times = []
+        view_times = []
+        overflow_ctr = 0
+        overflow = 10000
+
+        while len(gap_times) < 10:
+
+            overflow_ctr += 1
+
+            if overflow_ctr > overflow:
+                if len(gap_times) > 0:
+                    return np.mean(gap_times), np.std(gap_times)
+                else:
+                    print("Constant coverage")
+                    return 0, 0
+
+            d_theta = d_prop * 0.5 * math.pi / 180
+
+            seconds = (d_theta / (2 * math.pi)) * self.orbital_period
+            longitudinal_drift = seconds * constants["wE"] * 180 / math.pi
+
+            satellites = self.propagate(d_theta, radians=True)
+            coords = self.as_geographic(satellites)
+
+            time = d_theta / (2 * math.pi) * self.orbital_period
+            in_view = False
+
+            d_sat = 0
+
+            for coord in coords:
+
+                lat_i = coord[0]
+                long_i = coord[1]
+                long_i = long_i - longitudinal_drift
+
+                if long_i > 180:
+                    long_i = long_i - 180
+                elif long_i < -180:
+                    long_i = long_i + 360
+
+                distance = geographic_distance(target_lat, target_long, lat_i, long_i, radians=False)
+
+                if self.earth_coverage_radius == 0:
+                    earth_coverage_radius, theta = self.calculate_satellite_coverage(satellites[d_sat])
+                else:
+                    earth_coverage_radius = self.earth_coverage_radius
+
+                if distance < earth_coverage_radius:
+                    in_view = True
+
+                d_sat += 1
+
+            if in_view and tracking == False:  # Has just entered FOV
+                tracking = True
+                start_time = self.orbital_period * d_theta / (2 * math.pi)
+                gap_times.append(start_time - finish_time)
+
+            if not in_view and tracking == True:  # Has just left FOV
+                tracking = False
+                finish_time = self.orbital_period * d_theta / (2 * math.pi)
+                view_times.append(finish_time - start_time)
+
+            d_prop += 1
+
+        print(gap_times)
+        return np.mean(gap_times), np.std(gap_times)
+
+    def calculate_satellite_coverage(self,satellite):
+
+        r = 0
+
+        if satellite.eccentricity > 0:
+
+            a = satellite.semi_major
+            b = a * math.sqrt(1 - math.pow(self.eccentricity, 2))
+            f = (self.altitude + heavenly_body_radius[self.focus]) * 10 ** 3
+            disp = a - f
+
+            ang = (satellite.ta + 180) * math.pi / 180
+            x_i, y_i, z_i = disp + a * np.cos(ang), b * np.sin(ang), 0
+            coords = np.array([x_i, y_i, z_i]) * 10 ** -3
+            coords = rotate(coords, satellite.right_ascension * math.pi / 180, 'z')
+            coords = rotate(coords, satellite.inclination * math.pi / 180, 'x')
+
+            r = math.sqrt(np.sum(coords**2))
+
+        else:
+
+            r = satellite.true_alt
+
+        half_width = (satellite.beam / 2) * math.pi / 180
+        max_width = math.atan(heavenly_body_radius[self.focus] / (self.altitude + heavenly_body_radius[self.focus]))
+        if half_width > max_width:
+            half_width = max_width
+        x = r * math.tan(half_width)
+        if x > heavenly_body_radius[self.focus]:
+            x = heavenly_body_radius[self.focus]
+
+        theta = math.asin(x / heavenly_body_radius[self.focus])
+        coverage_radius = heavenly_body_radius[self.focus] * theta
+        # print(coverage_radius)
+        return coverage_radius, theta
 
     def __str__(self):
         sat_string = ""
@@ -62,11 +193,94 @@ class Constellation:
 
         sat_json = {"Satellite": sat_list}
 
-        file_name = "{0}_{1}_sats.json".format(self.name,self.num_satellites)
+        file_name = "{0}_{1}_sats.json".format(self.name, self.num_satellites)
 
         return file_name, sat_json
 
+    def as_cartesian(self, custom_satellites=None):
 
+        satellites = []
+        if custom_satellites is not None:
+            satellites = custom_satellites
+        else:
+            satellites = self.satellites
+
+        cart_coordinates = np.empty([len(satellites), 3])
+        d_sat = 0
+
+        for satellite in satellites:
+
+            r = satellite.true_alt
+
+            if satellite.eccentricity > 0:
+
+                a = satellite.semi_major
+                b = a * math.sqrt(1 - math.pow(self.eccentricity, 2))
+                f = (self.altitude + heavenly_body_radius[self.focus]) * 10 ** 3
+                disp = a - f
+
+                ang = (satellite.ta + 180) * math.pi / 180
+                x_i, y_i, z_i = disp + a * np.cos(ang), b * np.sin(ang), 0
+                coords = np.array([x_i, y_i, z_i]) * 10 ** -3
+                coords = rotate(coords, satellite.right_ascension * math.pi / 180, 'z')
+                coords = rotate(coords, satellite.inclination * math.pi / 180, 'x')
+
+                cart_coordinates[d_sat] = coords
+                d_sat += 1
+
+            else:
+
+                ax1 = np.array([r, 0, 0])
+                ax1 = rotate(ax1, satellite.right_ascension_r, 'z')
+                ax2 = rotate(ax1, math.pi / 2, 'z')
+                ax2 = rotate(ax2, satellite.inclination_r, 'custom',
+                             basis=ax1 / math.sqrt(np.sum(ax1 ** 2)))
+                basis = np.cross(ax1 / math.sqrt(np.sum(ax1 ** 2)), ax2 / math.sqrt(np.sum(ax2 ** 2)))
+
+                coords = np.array([r, 0, 0])
+                coords = rotate(coords, satellite.right_ascension_r, 'z')
+                coords = rotate(coords, (satellite.perigee_r + satellite.ta_r), 'custom', basis=basis)
+
+                cart_coordinates[d_sat] = coords
+                d_sat += 1
+
+        return cart_coordinates
+
+    def as_spherical(self, custom_satellites=None):
+
+        satellites = []
+        if custom_satellites is not None:
+            satellites = custom_satellites
+        else:
+            satellites = self.satellites
+
+        spherical_coordinates = np.empty([len(satellites), 3])
+        d_sat = 0
+
+        for coordinates in self.as_cartesian(satellites):
+            spherical_coordinates[d_sat] = cart2polar(int(coordinates[0]), int(coordinates[1]), int(coordinates[2]))
+            d_sat += 1
+
+        return spherical_coordinates
+
+    def as_geographic(self, custom_satellites=None):
+
+        satellites = []
+        if custom_satellites is not None:
+            satellites = custom_satellites
+        else:
+            satellites = self.satellites
+
+        geographic_coordinates = np.empty([len(satellites), 2])
+        d_sat = 0
+
+        for coordinates in self.as_spherical(satellites):
+            geographic_coordinates[d_sat] = spherical2geographic(coordinates[1],
+                                                                 coordinates[2],
+                                                                 radians=True)
+            d_sat += 1
+
+        return geographic_coordinates
 
 
 class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit for polar orbits
@@ -88,11 +302,8 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
                  eccentricity, beam_width, name="Walker", focus="earth", starting_number=0):
         super(WalkerConstellation, self).__init__(num_sats, 0, altitude, beam_width, eccentricity, inclination, focus,
                                                   name)
-        if self.inclination % 90 == 0:
-            self.plane_range = 180
-        else:
-            self.plane_range = 360
 
+        self.plane_range = 360
         self.num_planes = num_planes
         self.phasing = phasing
         self.start_num = starting_number
@@ -104,7 +315,6 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
         self.orbital_period = self.__calculate_orbit_params()
         self.satellites = self.__build_satellites()
         self.earth_coverage_radius, self.earth_coverage_angle, self.coverage_area = self.__calculate_simple_coverage()
-        self.revisit_time = self.__calculate_revisit_time()
         self.minimum_revisit = self.__calculate_minimum_revisit()
         self.average_links = self.__calculate_LOS()
 
@@ -169,51 +379,6 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
     def __calculate_minimum_revisit(self):  # Lower bound on the revisit time
         return heavenly_body_period[self.focus] * 24 * 60 * 60 / self.num_planes
 
-    def __calculate_revisit_time(self):  # Calculation based off method in Crisp, Livadiotti, Roberts 2018
-
-        foundPass = False
-        num_pass = 1
-        revisit_threshold = 20
-        step = self.num_planes
-        revisit_time = 0
-        ta_step = 360 / step
-        ta = np.array(np.add(self.ta, self.perigee_positions), dtype=float)
-
-        drift = self.orbital_period * constants["wE"] * 180 / math.pi
-        drift = drift / step
-
-        while not foundPass:
-            pass_drift = []
-            lambda_j = (drift * num_pass)
-            for i in range(self.num_planes):
-                lambda_plane = []
-                lambda_p = lambda_j + 360 * i * ((1 / self.num_planes) + (self.phasing / self.num_satellites))
-                lambda_plane.append(int(lambda_p))
-                for j in range(1, self.sats_per_plane):
-                    lambda_s = lambda_p + (j / self.sats_per_plane) * drift
-                    lambda_plane.append(int(lambda_s))
-                pass_drift.append(lambda_plane)
-            check_ang = 360 / self.num_planes
-            pass_drift_np = (np.array(pass_drift) % check_ang).flatten()
-
-            pass_drift_np_indices = pass_drift_np > check_ang / 2
-            pass_drift_np[pass_drift_np_indices] = check_ang - pass_drift_np[pass_drift_np_indices]
-            ta += ta_step
-            ta_check = ta % 180
-
-            if np.any(pass_drift_np < revisit_threshold) and np.any(ta_check < revisit_threshold):
-
-                foundPass = True
-                # print("Number of passes for revisit within threshold of {0} degrees : {1}".format(revisit_threshold,
-                #                                                                                   num_pass))
-                revisit_time = (self.orbital_period * num_pass) / step
-                # print("Revisit time is {0} hrs".format(revisit_time / 3600))
-
-            else:
-                num_pass += 1
-
-        return revisit_time
-
     def __calculate_LOS(self):
         sat_coords = np.array([[0, 0, 0]])
         average_links = np.array([])
@@ -274,7 +439,8 @@ class SOCConstellation(Constellation):  # This is really just a part of a walker
     :param focus: Heavenly body at the focus of the orbit, defaults to 'Earth'
     """
 
-    def __init__(self, num_streets, street_width, altitude, beam_width, raan, eccentricity, revisit_time, name="Streets",
+    def __init__(self, num_streets, street_width, altitude, beam_width, raan, eccentricity, revisit_time,
+                 name="Streets",
                  focus="earth", starting_number=0):
 
         super(SOCConstellation, self).__init__(0, 0, altitude, beam_width, eccentricity, 90, focus, name)
@@ -301,7 +467,7 @@ class SOCConstellation(Constellation):  # This is really just a part of a walker
         x = self.altitude * math.tan(half_width)
         theta = math.asin(x / heavenly_body_radius[self.focus])
         r = heavenly_body_radius[self.focus] * theta
-        return r, theta * 2
+        return r, theta
 
     def __calculate_spacing(self):
         street_width = heavenly_body_radius[self.focus] * self.street_width * math.pi / 180
@@ -309,7 +475,7 @@ class SOCConstellation(Constellation):  # This is really just a part of a walker
             print("Street width larger than maximum width of coverage")
             street_width = self.earth_coverage_radius
         y = math.sqrt(math.pow(self.earth_coverage_radius, 2) - math.pow(street_width / 2, 2))
-        ang_spacing = 2 * y / heavenly_body_radius[self.focus]
+        ang_spacing = y / heavenly_body_radius[self.focus]
         return y, ang_spacing
 
     def __calculate_orbit_params(self):
@@ -510,7 +676,7 @@ class FlowerConstellation(Constellation):
             sat_name = i
             satellites.append(Satellite(sat_name, self.altitude, self.eccentricity, self.inclination, self.raan[i],
                                         0, self.true_anomaly[i], self.beam_width, self.focus,
-                                        rads=False, orbital_period=self.orbital_period))
+                                        rads=False, orbital_period=self.orbital_period, semi_major=self.semi_major))
 
         return satellites
 

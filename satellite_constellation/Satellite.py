@@ -10,14 +10,15 @@ import warnings
 class Satellite(object):
 
     def __init__(self, name, altitude, eccentricity, inclination, right_ascension, perigee, ta, beam,
-                 focus="earth", rads=True, orbital_period=0):
+                 focus="earth", rads=True, orbital_period=0, semi_major = 0):
         self._name = name
         self._altitude = altitude
         self._focus = focus
         self._true_alt = self.altitude + self.__get_radius()
         self._eccentricity = eccentricity
         self._beam = beam
-        self._orbital_period = orbital_period
+        self.orbital_period = orbital_period
+        self.semi_major = semi_major
 
         if not rads:
             self.inclination = inclination
@@ -70,15 +71,6 @@ class Satellite(object):
     @property
     def beam(self):
         return self._beam
-
-    @beam.setter
-    def beam(self, new_beam):
-        if new_beam < 0:
-            return ValueError("Beam width must be between 0 and 180 degrees")
-        elif new_beam > 180:
-            return ValueError("Beam width must be between 0 and 180 degrees")
-        else:
-            self._beam = new_beam
 
     def __convert_to_rads(self, value=None):
         to_rad = pi / 180
