@@ -146,8 +146,6 @@ class Satellite(object):
 
         inclination = (3 - len(str(self.inclination)))*str(0) + "{:.4f}".format(float(self.inclination))
         right_ascension = (3 - len(str(self.right_ascension)))*str(0) + "{:.4f}".format(float(self.right_ascension))
-        eccentricity = "0000000"
-        e = "{:.7f}".format(float(self.eccentricity))
         eccentricity = self.eccentricity*10**7
         eccentricity = (7 - len(str(int(eccentricity))))*str(0) + "{:.0f}".format(float(eccentricity))
 
@@ -157,7 +155,7 @@ class Satellite(object):
         m = "{:.0f}".format(float(self.ta))
         mean_anomaly = (3 - len(m))*str(0) + "{:.4f}".format(float(self.ta))
 
-        mean_motion = 86801/self._orbital_period
+        mean_motion = 86801/self.orbital_period
         mean_motion =(2 - len(str(int(mean_motion))))*str(0) + "{:.8f}".format(mean_motion)
 
         sat = {"Name": self.name,
