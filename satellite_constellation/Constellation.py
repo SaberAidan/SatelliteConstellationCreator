@@ -86,7 +86,6 @@ class Constellation:
             satellites = self.propagate(d_theta, radians=True)
             coords = self.as_geographic(satellites)
 
-            time = d_theta / (2 * math.pi) * self.orbital_period
             in_view = False
 
             d_sat = 0
@@ -129,7 +128,7 @@ class Constellation:
         print(gap_times)
         return np.mean(gap_times), np.std(gap_times)
 
-    def calculate_satellite_coverage(self,satellite):
+    def calculate_satellite_coverage(self, satellite):
 
         r = 0
 
@@ -146,7 +145,7 @@ class Constellation:
             coords = rotate(coords, satellite.right_ascension * math.pi / 180, 'z')
             coords = rotate(coords, satellite.inclination * math.pi / 180, 'x')
 
-            r = math.sqrt(np.sum(coords**2))
+            r = math.sqrt(np.sum(coords ** 2))
 
         else:
 
@@ -165,7 +164,7 @@ class Constellation:
         # print(coverage_radius)
         return coverage_radius, theta
 
-    def find_links(self, custom_satellites = None):
+    def find_links(self, custom_satellites=None):
 
         # sat_coords = np.array([[0, 0, 0]])
         sat_coords = self.as_cartesian(self.satellites)
@@ -182,6 +181,43 @@ class Constellation:
             average_links = np.append(average_links, ctr)
 
         return math.floor(np.mean(average_links))
+
+    def calculate_constellation_coverage(self, resolution = 0.5, custom_satellites=None):
+
+        d_lat = -90
+        area = 0
+
+        coords = self.as_geographic()
+        sats = self.satellites
+
+        while d_lat < 90:
+            d_long = -180
+            while d_long < 180:
+                centre_lat = (2 * d_lat + resolution) / 2
+                centre_long = (2 * d_long + resolution) / 2
+                d_sat = 0
+
+                for coord in coords:
+
+                    distance = geographic_distance(centre_lat, centre_long, coord[0], coord[1], radians=False)
+
+                    if self.earth_coverage_radius == 0:
+                        earth_coverage_radius, theta = self.calculate_satellite_coverage(sats[d_sat])
+                    else:
+                        earth_coverage_radius = self.earth_coverage_radius
+
+                    if distance < earth_coverage_radius:
+                        area += geographic_area(d_lat, d_long, d_lat + resolution, d_long + resolution, heavenly_body_radius[self.focus],
+                                                radians=False)
+
+                        break
+                    d_sat += 1
+
+                d_long += resolution
+
+            d_lat += resolution
+
+        return area
 
     def __str__(self):
         sat_string = ""
@@ -396,7 +432,6 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
     def __calculate_minimum_revisit(self):  # Lower bound on the revisit time
         return heavenly_body_period[self.focus] * 24 * 60 * 60 / self.num_planes
 
-
     def __repr__(self):
         return "{0}, {1}, {2}, {3}, {4}, {5}, {6}, name={7}, starting_number={8}".format(self.num_satellites,
                                                                                          self.num_planes,
@@ -461,7 +496,7 @@ class SOCConstellation(Constellation):  # This is really just a part of a walker
         if street_width > self.earth_coverage_radius:
             print("Street width larger than maximum width of coverage")
             street_width = self.earth_coverage_radius
-            y = math.sqrt(math.pow(self.earth_coverage_radius, 2) - math.pow(street_width/2, 2))
+            y = math.sqrt(math.pow(self.earth_coverage_radius, 2) - math.pow(street_width / 2, 2))
         else:
             y = math.sqrt(math.pow(self.earth_coverage_radius, 2) - math.pow(street_width, 2))
         ang_spacing = y / heavenly_body_radius[self.focus]

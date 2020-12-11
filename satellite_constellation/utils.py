@@ -139,17 +139,29 @@ def sphere_intercept(P1, P2, R):
         return True
 
 
-def geographic_distance(lat1, lon1, lat2, lon2, radians = False):
+def geographic_distance(lat1, lon1, lat2, lon2, radians=False):
     if not radians:
-        lat1 = lat1*math.pi/180
-        lat2 = lat2*math.pi/180
-        lon2 = lon2*math.pi/180
-        lon1 = lon1*math.pi/180
+        lat1 = lat1 * math.pi / 180
+        lat2 = lat2 * math.pi / 180
+        lon2 = lon2 * math.pi / 180
+        lon1 = lon1 * math.pi / 180
 
     a = math.pow(math.sin((lat2 - lat1) / 2), 2) + math.cos(lat1) * math.cos(lat2) * math.pow(
         math.sin((lon2 - lon1) / 2), 2)
 
-    return 12742000 * math.atan2(math.sqrt(a), math.sqrt(1 - a))*10**-3
+    return 12742000 * math.atan2(math.sqrt(a), math.sqrt(1 - a)) * 10 ** -3
+
+
+def geographic_area(lat1, lon1, lat2, lon2, radius, radians=False):
+    if not radians:
+        lat1 = lat1 * math.pi / 180
+        lat2 = lat2 * math.pi / 180
+        lon2 = lon2 * math.pi / 180
+        lon1 = lon1 * math.pi / 180
+
+    area = math.pow(radius, 2) * abs(math.sin(lat1) - math.sin(lat2)) * abs(lon1 - lon2)
+
+    return area
 
 
 def polar2cart(r, phi, theta):
