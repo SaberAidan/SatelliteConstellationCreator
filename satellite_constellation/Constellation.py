@@ -165,6 +165,24 @@ class Constellation:
         # print(coverage_radius)
         return coverage_radius, theta
 
+    def find_links(self, custom_satellites = None):
+
+        # sat_coords = np.array([[0, 0, 0]])
+        sat_coords = self.as_cartesian(self.satellites)
+        average_links = np.array([])
+
+        for idy in range(0, sat_coords.shape[0]):  # Draw line of sight between satellites
+            ctr = 0
+            for idz in range(0, sat_coords.shape[0]):
+                if idz != idy:
+                    temp_coords = np.append([sat_coords[idy, :]], [sat_coords[idz, :]], axis=0)
+                    if not sphere_intercept(temp_coords[0], temp_coords[1],
+                                            heavenly_body_radius[self.focus]):
+                        ctr += 1
+            average_links = np.append(average_links, ctr)
+
+        return math.floor(np.mean(average_links))
+
     def __str__(self):
         sat_string = ""
         for sat in self.satellites:
@@ -316,7 +334,6 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
         self.satellites = self.__build_satellites()
         self.earth_coverage_radius, self.earth_coverage_angle, self.coverage_area = self.__calculate_simple_coverage()
         self.minimum_revisit = self.__calculate_minimum_revisit()
-        self.average_links = self.__calculate_LOS()
 
     def __corrected_planes(self):
         sats_per_plane = int(self.num_satellites / self.num_planes)
@@ -379,35 +396,6 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
     def __calculate_minimum_revisit(self):  # Lower bound on the revisit time
         return heavenly_body_period[self.focus] * 24 * 60 * 60 / self.num_planes
 
-    def __calculate_LOS(self):
-        sat_coords = np.array([[0, 0, 0]])
-        average_links = np.array([])
-
-        r = self.altitude + heavenly_body_radius[self.focus]
-
-        for idy in range(self.num_planes):  # Plot satellites
-            for idz in range(self.sats_per_plane):
-                ctr = idz + idy * self.sats_per_plane
-
-                x_i, y_i, z_i = polar2cart(r, 90 * math.pi / 180, (self.perigee_positions[ctr] + self.ta[ctr]
-                                                                   ) * math.pi / 180)
-                coords = np.array([x_i, y_i, z_i])
-                coords = rotate(coords, self.inclination * math.pi / 180, 'x')
-                coords = rotate(coords, (self.raan[ctr]) * math.pi / 180, 'z')
-                sat_coords = np.append(sat_coords, [coords], axis=0)
-
-        for idy in range(1, sat_coords.shape[0]):  # Draw line of sight between satellites
-            ctr = 0
-            for idz in range(1, sat_coords.shape[0]):
-                if idz != idy:
-
-                    temp_coords = np.append([sat_coords[idy, :]], [sat_coords[idz, :]], axis=0)
-                    if not sphere_intercept(temp_coords[0], temp_coords[1],
-                                            heavenly_body_radius[self.focus]):
-                        ctr += 1
-            average_links = np.append(average_links, ctr)
-
-        return math.floor(np.mean(average_links))
 
     def __repr__(self):
         return "{0}, {1}, {2}, {3}, {4}, {5}, {6}, name={7}, starting_number={8}".format(self.num_satellites,
@@ -457,7 +445,6 @@ class SOCConstellation(Constellation):  # This is really just a part of a walker
         self.perigee_positions = self.__perigee_positions()
         self.ta = self.__calculate_ta()
         self.satellites = self.__build_satellites()
-        self.average_links = self.__calculate_LOS()
 
     def __calculate_earth_coverage(self):
         half_width = (self.beam_width / 2) * math.pi / 180
@@ -474,7 +461,9 @@ class SOCConstellation(Constellation):  # This is really just a part of a walker
         if street_width > self.earth_coverage_radius:
             print("Street width larger than maximum width of coverage")
             street_width = self.earth_coverage_radius
-        y = math.sqrt(math.pow(self.earth_coverage_radius, 2) - math.pow(street_width / 2, 2))
+            y = math.sqrt(math.pow(self.earth_coverage_radius, 2) - math.pow(street_width/2, 2))
+        else:
+            y = math.sqrt(math.pow(self.earth_coverage_radius, 2) - math.pow(street_width, 2))
         ang_spacing = y / heavenly_body_radius[self.focus]
         return y, ang_spacing
 
@@ -539,36 +528,6 @@ class SOCConstellation(Constellation):  # This is really just a part of a walker
                                             orbital_period=self.orbital_period))
         return satellites
 
-    def __calculate_LOS(self):
-        sat_coords = np.array([[0, 0, 0]])
-        average_links = np.array([])
-
-        r = self.altitude + heavenly_body_radius[self.focus]
-
-        for idy in range(self.num_streets):  # Plot satellites
-            for idz in range(self.sats_per_street):
-                ctr = idz + idy * self.sats_per_street
-
-                x_i, y_i, z_i = polar2cart(r, 90 * math.pi / 180, (self.perigee_positions[ctr] + self.ta[ctr]
-                                                                   ) * math.pi / 180)
-                coords = np.array([x_i, y_i, z_i])
-                coords = rotate(coords, self.inclination * math.pi / 180, 'x')
-                coords = rotate(coords, (self.raan[idy]) * math.pi / 180, 'z')
-                sat_coords = np.append(sat_coords, [coords], axis=0)
-
-        for idy in range(1, sat_coords.shape[0]):  # Draw line of sight between satellites
-            ctr = 0
-            for idz in range(1, sat_coords.shape[0]):
-                if idz != idy:
-
-                    temp_coords = np.append([sat_coords[idy, :]], [sat_coords[idz, :]], axis=0)
-                    if not sphere_intercept(temp_coords[0], temp_coords[1],
-                                            heavenly_body_radius[self.focus]):
-                        ctr += 1
-            average_links = np.append(average_links, ctr)
-            # print(ctr)
-        return math.floor(np.mean(average_links))
-
     def __repr__(self):
         return "{0}, {1}, {2}, {3}, {4}".format(self.num_satellites,
                                                 self.altitude, self.eccentricity,
@@ -612,7 +571,6 @@ class FlowerConstellation(Constellation):
         self.revisit_time = self.__calculate_revisit_time()
         self.minimum_revisit_time = self.__calculate_minimum_revisit_time()
         self.satellites = self.__build_satellites()
-        self.average_links = self.__calculate_LOS()
 
     def __calculate_max_satellites(self):
         max_sats = self.phasing_d * self.num_days
@@ -679,37 +637,6 @@ class FlowerConstellation(Constellation):
                                         rads=False, orbital_period=self.orbital_period, semi_major=self.semi_major))
 
         return satellites
-
-    def __calculate_LOS(self):
-
-        sat_coords = np.array([[0, 0, 0]])
-        average_links = np.array([])
-
-        a = self.semi_major
-        b = a * math.sqrt(1 - math.pow(self.eccentricity, 2))
-        f = (self.altitude + heavenly_body_radius[self.focus]) * 10 ** 3
-        disp = a - f
-
-        for idy in range(self.num_satellites):  # Plot satellites
-            ang = (self.true_anomaly[idy] + 180) * math.pi / 180
-            x_i, y_i, z_i = disp + a * np.cos(ang), b * np.sin(ang), 0
-            coords = np.array([x_i, y_i, z_i]) * 10 ** -3
-            coords = rotate(coords, self.raan[idy] * math.pi / 180, 'z')
-            coords = rotate(coords, self.inclination * math.pi / 180, 'x')
-
-            sat_coords = np.append(sat_coords, [coords], axis=0)
-
-        for idy in range(1, sat_coords.shape[0]):  # Draw line of sight between satellites
-            ctr = 0
-            for idz in range(1, sat_coords.shape[0]):
-                if idz != idy:
-                    temp_coords = np.append([sat_coords[idy, :]], [sat_coords[idz, :]], axis=0)
-                    if not sphere_intercept(temp_coords[0], temp_coords[1],
-                                            heavenly_body_radius[self.focus]):
-                        ctr += 1
-            average_links = np.append(average_links, ctr)
-
-        return math.floor(np.mean(average_links))
 
     def representation(self, representation_type="flower"):
         if representation_type == "flower":
