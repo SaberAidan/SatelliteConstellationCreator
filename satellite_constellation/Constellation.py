@@ -57,7 +57,6 @@ class Constellation:
             satellite.ta_r = satellite.ta_r + angle_r
             satellite.ta = satellite.ta + angle_d
             new_sats.append(satellite)
-            # print(new_sats)
 
         return new_sats
 
@@ -105,47 +104,13 @@ class Constellation:
         d_sat = 0
 
         for satellite in satellites:
-
-            r = satellite.true_alt
-
-            if satellite.eccentricity > 0:
-
-                a = satellite.semi_major
-                b = a * math.sqrt(1 - math.pow(self.eccentricity, 2))
-                f = (self.altitude + heavenly_body_radius[self.focus]) * 10 ** 3
-                disp = a - f
-
-                ang = deg_2_rad(satellite.ta + 180)
-
-                x_i, y_i, z_i = disp + a * np.cos(ang), b * np.sin(ang), 0
-                coords = np.array([x_i, y_i, z_i]) * 10 ** -3
-                coords = rotate(coords, deg_2_rad(satellite.right_ascension), 'z')
-                coords = rotate(coords, deg_2_rad(satellite.inclination), 'x')
-
-                cart_coordinates[d_sat] = coords
-                d_sat += 1
-
-            else:
-
-                ax1 = np.array([r, 0, 0])
-                ax1 = rotate(ax1, satellite.right_ascension_r, 'z')
-                ax2 = rotate(ax1, math.pi / 2, 'z')
-                ax2 = rotate(ax2, satellite.inclination_r, 'custom',
-                             basis=ax1 / math.sqrt(np.sum(ax1 ** 2)))
-                basis = np.cross(ax1 / math.sqrt(np.sum(ax1 ** 2)), ax2 / math.sqrt(np.sum(ax2 ** 2)))
-
-                coords = np.array([r, 0, 0])
-                coords = rotate(coords, satellite.right_ascension_r, 'z')
-                coords = rotate(coords, (satellite.perigee_r + satellite.ta_r), 'custom', basis=basis)
-
-                cart_coordinates[d_sat] = coords
-                d_sat += 1
+            cart_coordinates[d_sat] = sat_to_xyz(satellite)
+            d_sat += 1
 
         return cart_coordinates
 
     def as_spherical(self, custom_satellites=None):
 
-        satellites = []
         if custom_satellites is not None:
             satellites = custom_satellites
         else:
@@ -155,6 +120,7 @@ class Constellation:
         d_sat = 0
 
         for coordinates in self.as_cartesian(satellites):
+            # print(coordinates)
             spherical_coordinates[d_sat] = cart2polar(int(coordinates[0]), int(coordinates[1]), int(coordinates[2]))
             d_sat += 1
 
@@ -223,7 +189,6 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
         return sats_per_plane, corrected_phasing
 
     def __perigee_positions(self):
-        # perigees = list(range(0, 360, int(360 / self.sats_per_plane)))
         ang_lim = 360 - 360 / self.sats_per_plane
         perigees = np.linspace(0, ang_lim, self.sats_per_plane)
 
@@ -247,7 +212,7 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
         return ta
 
     def __calculate_simple_coverage(self):
-        half_width = deg_2_rad(self.beam_width/2)
+        half_width = deg_2_rad(self.beam_width / 2)
         # half_width = (self.beam_width / 2) * math.pi / 180
         max_width = math.atan(heavenly_body_radius[self.focus] / (self.altitude + heavenly_body_radius[self.focus]))
         if half_width > max_width:
