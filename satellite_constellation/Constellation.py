@@ -2,6 +2,7 @@
 Class for holding Constellations of Satellites within it.
 """
 from .Satellite import Satellite
+from satellite_constellation.Errors import *
 from .utils import *
 import warnings
 import math
@@ -25,6 +26,10 @@ class Constellation:
 
     def __init__(self, num_satellites, orbital_period, altitude, beam_width, eccentricity, inclination, focus='Earth',
                  name="constellation"):
+
+        constellation_errors(num_satellites, orbital_period, altitude, beam_width, eccentricity, inclination, focus,
+                             name)
+
         self.num_satellites = num_satellites
         self.orbital_period = orbital_period
         self.altitude = altitude
@@ -182,7 +187,7 @@ class Constellation:
 
         return math.floor(np.mean(average_links))
 
-    def calculate_constellation_coverage(self, resolution = 0.5, custom_satellites=None):
+    def calculate_constellation_coverage(self, resolution=0.5, custom_satellites=None):
 
         d_lat = -90
         area = 0
@@ -207,7 +212,8 @@ class Constellation:
                         earth_coverage_radius = self.earth_coverage_radius
 
                     if distance < earth_coverage_radius:
-                        area += geographic_area(d_lat, d_long, d_lat + resolution, d_long + resolution, heavenly_body_radius[self.focus],
+                        area += geographic_area(d_lat, d_long, d_lat + resolution, d_long + resolution,
+                                                heavenly_body_radius[self.focus],
                                                 radians=False)
 
                         break
@@ -357,6 +363,9 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
         super(WalkerConstellation, self).__init__(num_sats, 0, altitude, beam_width, eccentricity, inclination, focus,
                                                   name)
 
+        walker_errors(num_sats, num_planes, phasing, inclination, altitude,
+                      eccentricity, beam_width, name, focus)
+
         self.plane_range = 360
         self.num_planes = num_planes
         self.phasing = phasing
@@ -467,6 +476,9 @@ class SOCConstellation(Constellation):  # This is really just a part of a walker
                  focus="earth", starting_number=0):
 
         super(SOCConstellation, self).__init__(0, 0, altitude, beam_width, eccentricity, 90, focus, name)
+
+        street_errors(num_streets, street_width, altitude, beam_width, raan, eccentricity, revisit_time,
+                      "Streets", "earth")
 
         self.num_streets = num_streets
         self.start_num = starting_number
@@ -593,6 +605,10 @@ class FlowerConstellation(Constellation):
                  inclination, perigee_altitude, beam_width, focus='earth', name="Flower"):
         super(FlowerConstellation, self).__init__(num_satellites, 0, perigee_altitude, beam_width, 0, inclination,
                                                   focus, name)
+
+        flower_errors(num_petals, num_days, num_satellites, phasing_n, phasing_d, perigee_argument,
+                      inclination, perigee_altitude, beam_width, focus='earth', name="Flower")
+
         self.num_petals = num_petals
         self.num_days = num_days
         self.phasing_n = phasing_n
