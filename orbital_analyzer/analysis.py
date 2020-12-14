@@ -28,6 +28,8 @@ class orbital_analysis:
         overflow_ctr = 0
         overflow = 10000
 
+        num_sats = []
+
         while len(gap_times) < 10:
 
             overflow_ctr += 1
@@ -47,11 +49,15 @@ class orbital_analysis:
             satellites = self.constellation.propagate(d_theta, radians=True)
 
             in_view = False
+            num_sats_round = 0
 
             for satellite in satellites:
 
                 if self.check_sat_FOV(satellite, target_lat, target_long, longitudinal_drift):
                     in_view = True
+                    num_sats_round += 1
+
+            num_sats.append(num_sats_round)
 
             if in_view and tracking == False:  # Has just entered FOV
                 tracking = True
@@ -65,7 +71,7 @@ class orbital_analysis:
 
             d_prop += 1
 
-        return np.mean(gap_times), np.std(gap_times), np.mean(view_times), np.std(view_times)
+        return np.mean(num_sats), np.mean(gap_times), np.std(gap_times), np.mean(view_times), np.std(view_times)
 
     def check_sat_FOV(self, satellite, target_lat, target_lon, drift, threshold=0):
 
@@ -235,6 +241,8 @@ class orbital_analysis:
         overflow_ctr = 0
         overflow = 10000
 
+        num_sats = []
+
         while len(gap_times) < 10:
 
             overflow_ctr += 1
@@ -254,12 +262,16 @@ class orbital_analysis:
             satellites = self.constellation.propagate(d_theta, radians=True)
 
             in_view = False
+            num_sats_round = 0
 
             for satellite in satellites:
 
                 if self.check_ground_FOV(satellite, station_lat, station_long, station_fov, longitudinal_drift,
                                          radians):
                     in_view = True
+                    num_sats_round += 1
+
+            num_sats.append(num_sats_round)
 
             if in_view and tracking == False:  # Has just entered FOV
                 tracking = True
@@ -273,4 +285,4 @@ class orbital_analysis:
 
             d_prop += 1
 
-        return np.mean(gap_times), np.std(gap_times), np.mean(view_times), np.std(view_times)
+        return np.mean(num_sats), np.mean(gap_times), np.std(gap_times), np.mean(view_times), np.std(view_times)

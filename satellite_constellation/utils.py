@@ -1,17 +1,6 @@
 import math
 import numpy as np
 
-
-def mod(x, y):
-    """
-    Mappable modulo function
-    :param x: First number
-    :param y: Second number
-    :return: x % y
-    """
-    return [a % b for a, b in zip(x, y)]
-
-
 heavenly_body_radius = {  # [km]
     "earth": 6371,
     "luna": 1737,
@@ -59,6 +48,16 @@ constants = {
     "wE": 7.2921159 * 10 ** (-5),  # Earth angular velocity [rad/s]
     "J2E": 10826269 * 10 ** (-3),  # Earth J2 constant
 }
+
+
+def mod(x, y):
+    """
+    Mappable modulo function
+    :param x: First number
+    :param y: Second number
+    :return: x % y
+    """
+    return [a % b for a, b in zip(x, y)]
 
 
 def proper_round(num, dec=0):  # Add exception check for no decimal point found
@@ -231,7 +230,6 @@ def spherical2geographic(polar, azimuth, radians):
 
 
 def geographic2spherical(latitude, longitude, altitude):
-
     polar = deg_2_rad(90 - latitude)
     azimuth = deg_2_rad(longitude)
     return polar, azimuth

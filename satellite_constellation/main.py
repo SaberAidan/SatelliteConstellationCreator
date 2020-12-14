@@ -6,20 +6,21 @@ import time
 import json
 
 if __name__ == '__main__':
-    myWalker = WalkerConstellation(4, 2, 1, 80, 35785, 0, 10)
-    # # visualiser.draw_walker_plotly(myWalker, sensor_regions=True, links=True)
+    myWalker = WalkerConstellation(10, 5, 1, 80, 35785, 0, 10)
+    # visualiser.draw_walker_plotly(myWalker, sensor_regions=False, links=False)
 
-    # # myFlower = FlowerConstellation(8, 1, 9, 1, 9, 0, 0, 2500, 10)
-    # # visualiser.draw_flower_plotly(myFlower, links=True)
+    # myFlower = FlowerConstellation(8, 1, 9, 1, 9, 0, 90, 2500, 10)
+    # visualiser.draw_flower_plotly(myFlower, links=True)
 
     # # myStreets = SOCConstellation(1, 20, 15000, 20, [0], 0, 10)
     # # visualiser.draw_soc_plotly(myStreets, links=False, sensor_regions=True)
 
     myAnalyzer = orbital_analysis(myWalker)
     print(myAnalyzer.calculate_revisit(0, 0))
+    print(myAnalyzer.ground_station_visibility(0, 0, 60, radians=False))
+
     # print(myAnalyzer.calculate_constellation_coverage())
     # print(myAnalyzer.check_ground_FOV(myWalker.satellites[0], 0, 0, 60, radians=False))
-    print(myAnalyzer.ground_station_visibility(0, 0, 60, radians=False))
 
     # print(myAnalyzer.calculate_constellation_coverage(1))
     # print(myAnalyzer.find_links())
