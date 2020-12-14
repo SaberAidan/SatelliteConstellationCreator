@@ -37,3 +37,11 @@ class FocusError(Exception):
 
 class MaxSatellitesExceededError(Exception):
     pass
+
+
+class StreetWidthError(Exception):
+    pass
+
+
+class RevisitError(Exception):
+    pass
