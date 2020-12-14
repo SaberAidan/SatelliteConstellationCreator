@@ -39,10 +39,10 @@ class orbital_analysis:
                     print("Constant coverage")
                     return 0, 0
 
-            d_theta = d_prop * 0.5 * math.pi / 180
+            d_theta = deg_2_rad(d_prop * 0.5)
 
             seconds = (d_theta / (2 * math.pi)) * self.constellation.orbital_period
-            longitudinal_drift = seconds * constants["wE"] * 180 / math.pi
+            longitudinal_drift = deg_2_rad(seconds * constants["wE"])
 
             satellites = self.constellation.propagate(d_theta, radians=True)
             coords = self.constellation.as_geographic(satellites)
@@ -97,11 +97,11 @@ class orbital_analysis:
             f = (self.constellation.altitude + heavenly_body_radius[self.constellation.focus]) * 10 ** 3
             disp = a - f
 
-            ang = (satellite.ta + 180) * math.pi / 180
+            ang = deg_2_rad(satellite.ta + 180)
             x_i, y_i, z_i = disp + a * np.cos(ang), b * np.sin(ang), 0
             coords = np.array([x_i, y_i, z_i]) * 10 ** -3
-            coords = rotate(coords, satellite.right_ascension * math.pi / 180, 'z')
-            coords = rotate(coords, satellite.inclination * math.pi / 180, 'x')
+            coords = rotate(coords, deg_2_rad(satellite.right_ascension), 'z')
+            coords = rotate(coords, deg_2_rad(satellite.inclination), 'x')
 
             r = math.sqrt(np.sum(coords ** 2))
 
@@ -109,7 +109,7 @@ class orbital_analysis:
 
             r = satellite.true_alt
 
-        half_width = (satellite.beam / 2) * math.pi / 180
+        half_width = deg_2_rad(satellite.beam / 2)
         max_width = math.atan(heavenly_body_radius[self.constellation.focus] / (self.constellation.altitude + heavenly_body_radius[self.constellation.focus]))
         if half_width > max_width:
             half_width = max_width

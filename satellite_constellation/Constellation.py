@@ -44,11 +44,11 @@ class Constellation:
     def propagate(self, angle, radians):
 
         if not radians:
-            angle_r = angle * math.pi / 180
+            angle_r = deg_2_rad(angle)
             angle_d = angle
         else:
             angle_r = angle
-            angle_d = angle * 180 / math.pi
+            angle_d = rad_2_deg(angle)
 
         prop_sats = copy.deepcopy(self.satellites)
         new_sats = []
@@ -115,11 +115,12 @@ class Constellation:
                 f = (self.altitude + heavenly_body_radius[self.focus]) * 10 ** 3
                 disp = a - f
 
-                ang = (satellite.ta + 180) * math.pi / 180
+                ang = deg_2_rad(satellite.ta + 180)
+
                 x_i, y_i, z_i = disp + a * np.cos(ang), b * np.sin(ang), 0
                 coords = np.array([x_i, y_i, z_i]) * 10 ** -3
-                coords = rotate(coords, satellite.right_ascension * math.pi / 180, 'z')
-                coords = rotate(coords, satellite.inclination * math.pi / 180, 'x')
+                coords = rotate(coords, deg_2_rad(satellite.right_ascension), 'z')
+                coords = rotate(coords, deg_2_rad(satellite.inclination), 'x')
 
                 cart_coordinates[d_sat] = coords
                 d_sat += 1
@@ -246,7 +247,8 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
         return ta
 
     def __calculate_simple_coverage(self):
-        half_width = (self.beam_width / 2) * math.pi / 180
+        half_width = deg_2_rad(self.beam_width/2)
+        # half_width = (self.beam_width / 2) * math.pi / 180
         max_width = math.atan(heavenly_body_radius[self.focus] / (self.altitude + heavenly_body_radius[self.focus]))
         if half_width > max_width:
             half_width = max_width
@@ -330,7 +332,7 @@ class SOCConstellation(Constellation):  # This is really just a part of a walker
         self.satellites = self.__build_satellites()
 
     def __calculate_earth_coverage(self):
-        half_width = (self.beam_width / 2) * math.pi / 180
+        half_width = deg_2_rad(self.beam_width / 2)
         max_width = math.atan(heavenly_body_radius[self.focus] / (self.altitude + heavenly_body_radius[self.focus]))
         if half_width > max_width:
             half_width = max_width
@@ -340,7 +342,7 @@ class SOCConstellation(Constellation):  # This is really just a part of a walker
         return r, theta
 
     def __calculate_spacing(self):
-        street_width = heavenly_body_radius[self.focus] * self.street_width * math.pi / 180
+        street_width = heavenly_body_radius[self.focus] * deg_2_rad(self.street_width)
         if street_width > self.earth_coverage_radius:
             print("Street width larger than maximum width of coverage")
             street_width = self.earth_coverage_radius
@@ -493,7 +495,7 @@ class FlowerConstellation(Constellation):
             if M_i < 0:
                 M_i = 360 + M_i
             M.append(M_i)
-            v_i = M_i + (2 * self.eccentricity - 0.25 * math.pow(self.eccentricity, 3)) * math.sin(M_i * math.pi / 180)
+            v_i = M_i + (2 * self.eccentricity - 0.25 * math.pow(self.eccentricity, 3)) * math.sin(deg_2_rad(M_i))
             v.append(v_i)
         return raan, M, v
 

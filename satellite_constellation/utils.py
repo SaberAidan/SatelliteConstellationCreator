@@ -195,3 +195,11 @@ def spherical2geographic(polar, azimuth, radians):
     longitude = azimuth
 
     return latitude, longitude
+
+
+def rad_2_deg(angle):
+    return angle * 180 / math.pi
+
+
+def deg_2_rad(angle):
+    return angle * math.pi / 180

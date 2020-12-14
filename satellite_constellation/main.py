@@ -9,11 +9,11 @@ if __name__ == '__main__':
     myWalker = WalkerConstellation(8, 8, 2, 80, 35785, 0, 10)
     visualiser.draw_walker_plotly(myWalker, sensor_regions=True, links=True)
 
-    # myFlower = FlowerConstellation(8, 1, 9, 1, 9, 0, 0, 2500, 10)
-    # visualiser.draw_flower_plotly(myFlower, links=True)
+    myFlower = FlowerConstellation(8, 1, 9, 1, 9, 0, 0, 2500, 10)
+    visualiser.draw_flower_plotly(myFlower, links=True)
 
-    # myStreets = SOCConstellation(1, 20, 15000, 20, [0], 0, 10)
-    # visualiser.draw_soc_plotly(myStreets, links=False, sensor_regions=True)
+    myStreets = SOCConstellation(1, 20, 15000, 20, [0], 0, 10)
+    visualiser.draw_soc_plotly(myStreets, links=False, sensor_regions=True)
 
     myAnalyzer = orbital_analysis(myWalker)
     print(myAnalyzer.calculate_revisit(0,0))
