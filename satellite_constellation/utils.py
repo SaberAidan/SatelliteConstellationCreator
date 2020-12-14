@@ -136,7 +136,7 @@ def sphere_intercept(P1, P2, R):
         return True
 
 
-def geographic_distance(lat1, lon1, lat2, lon2, radians=False):
+def geographic_distance(lat1, lon1, lat2, lon2, radius, radians=False):
     if not radians:
         lat1 = lat1 * math.pi / 180
         lat2 = lat2 * math.pi / 180
@@ -146,7 +146,7 @@ def geographic_distance(lat1, lon1, lat2, lon2, radians=False):
     a = math.pow(math.sin((lat2 - lat1) / 2), 2) + math.cos(lat1) * math.cos(lat2) * math.pow(
         math.sin((lon2 - lon1) / 2), 2)
 
-    return 12742000 * math.atan2(math.sqrt(a), math.sqrt(1 - a)) * 10 ** -3
+    return radius * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 
 def geographic_area(lat1, lon1, lat2, lon2, radius, radians=False):
@@ -159,6 +159,39 @@ def geographic_area(lat1, lon1, lat2, lon2, radius, radians=False):
     area = math.pow(radius, 2) * abs(math.sin(lat1) - math.sin(lat2)) * abs(lon1 - lon2)
 
     return area
+
+
+def sat_to_xyz(satellite):
+    r = satellite.true_alt
+
+    if satellite.eccentricity > 0:
+
+        a = satellite.semi_major
+        b = a * math.sqrt(1 - math.pow(satellite.eccentricity, 2))
+        f = (satellite.altitude + heavenly_body_radius[satellite._focus]) * 10 ** 3
+        disp = a - f
+
+        ang = deg_2_rad(satellite.ta + 180)
+
+        x_i, y_i, z_i = disp + a * np.cos(ang), b * np.sin(ang), 0
+        coords = np.array([x_i, y_i, z_i]) * 10 ** -3
+        coords = rotate(coords, deg_2_rad(satellite.right_ascension), 'z')
+        coords = rotate(coords, deg_2_rad(satellite.inclination), 'x')
+
+    else:
+
+        ax1 = np.array([r, 0, 0])
+        ax1 = rotate(ax1, satellite.right_ascension_r, 'z')
+        ax2 = rotate(ax1, math.pi / 2, 'z')
+        ax2 = rotate(ax2, satellite.inclination_r, 'custom',
+                     basis=ax1 / math.sqrt(np.sum(ax1 ** 2)))
+        basis = np.cross(ax1 / math.sqrt(np.sum(ax1 ** 2)), ax2 / math.sqrt(np.sum(ax2 ** 2)))
+
+        coords = np.array([r, 0, 0])
+        coords = rotate(coords, satellite.right_ascension_r, 'z')
+        coords = rotate(coords, (satellite.perigee_r + satellite.ta_r), 'custom', basis=basis)
+    #
+    return coords
 
 
 def polar2cart(r, phi, theta):
@@ -195,6 +228,13 @@ def spherical2geographic(polar, azimuth, radians):
     longitude = azimuth
 
     return latitude, longitude
+
+
+def geographic2spherical(latitude, longitude, altitude):
+
+    polar = deg_2_rad(90 - latitude)
+    azimuth = deg_2_rad(longitude)
+    return polar, azimuth
 
 
 def rad_2_deg(angle):
