@@ -2,6 +2,7 @@ from __init__ import add_parent_directory  # Needed for running tests in pipelin
 
 if __name__ == "__main__":
     add_parent_directory()  # This must stay prior to the satellite_constellation imports
+
 from satellite_constellation.Constellation import *
 from satellite_constellation.SceneCreator import *
 import unittest
@@ -97,6 +98,27 @@ class TestSatellite(unittest.TestCase):
         self.assertAlmostEqual(90, rad_sat.ta, 4)
 
 
+class TestWalkerErrors(unittest.TestCase):
+
+    def test_plane_mismatch(self):
+        T, P, F = 1, 2, 1
+        with self.assertRaises(ConstellationPlaneMismatchError) as error:
+            WalkerConstellation(T, P, F, 30, 1000, 0.5, 20)
+
+    def test_phase_error(self):
+        T, P, F = 1, 1, -1
+        with self.assertRaises(PhaseError) as error:
+            WalkerConstellation(T, P, F, 30, 1000, 0.5, 20)
+
+        T, P, F = 1, 1, 1.5
+        with self.assertRaises(PhaseError) as error:
+            WalkerConstellation(T, P, F, 30, 1000, 0.5, 20)
+
+        T, P, F = 1, 1, 1
+        with self.assertRaises(PhaseError) as error:
+            WalkerConstellation(T, P, F, 30, 1000, 0.5, 20)
+
+
 class TestWalker(unittest.TestCase):
 
     def setUp(self):
@@ -107,6 +129,31 @@ class TestWalker(unittest.TestCase):
 
     def test_phasing(self):
         self.assertEqual(20, self.walker_constellation.correct_phasing)
+
+
+class TestStreetsErrors(unittest.TestCase):
+
+    def test_plane_mismatch(self):
+        with self.assertRaises(ConstellationConfigurationError) as error:
+            self.streets_constellation = SOCConstellation(1, 5, 15000, 60, [0, 10], 0, 100)
+
+        with self.assertRaises(ConstellationConfigurationError) as error:
+            self.streets_constellation = SOCConstellation(2, 5, 15000, 60, [0], 0, 100)
+
+    def test_invalid_streets(self):
+        with self.assertRaises(ConstellationConfigurationError) as error:
+            self.streets_constellation = SOCConstellation(0.1, 5, 15000, 60, [], 0, 100)
+
+    def test_street_width(self):
+        with self.assertRaises(StreetWidthError) as error:
+            self.streets_constellation = SOCConstellation(1, 190, 15000, 60, [0], 0, -10)
+
+        with self.assertRaises(StreetWidthError) as error:
+            self.streets_constellation = SOCConstellation(1, -10, 15000, 60, [0], 0, -10)
+
+    def test_revisit_time(self):
+        with self.assertRaises(RevisitError) as error:
+            self.streets_constellation = SOCConstellation(1, 5, 15000, 60, [0], 0, -10)
 
 
 class TestStreets(unittest.TestCase):
@@ -137,49 +184,75 @@ class TestStreets(unittest.TestCase):
         self.assertAlmostEqual(streets_constellation.num_satellites, 1, 1)
 
 
+class TestFlowerErrors(unittest.TestCase):
+
+    def test_max_satellites(self):
+        with self.assertRaises(MaxSatellitesExceededError) as error:
+            FlowerConstellation(8, 1, 20, 1, 9, 0, 0, 2500, 20)
+
+    def test_num_petals(self):
+        with self.assertRaises(ConstellationNumberError) as error:
+            FlowerConstellation(0.8, 1, 9, 1, 9, 0, 0, 2500, 20)
+
+    def test_num_days(self):
+        with self.assertRaises(ConstellationNumberError) as error:
+            FlowerConstellation(8, 1.5, 9, 1, 9, 0, 0, 2500, 20)
+
+    def test_num_satellites(self):
+        with self.assertRaises(ConstellationNumberError) as error:
+            FlowerConstellation(8, 1, 5.5, 1, 9, 0, 0, 2500, 20)
+
+    def test_phasing_n(self):
+        with self.assertRaises(ConstellationNumberError) as error:
+            FlowerConstellation(8, 1, 9, 1.5, 9, 0, 0, 2500, 20)
+
+    def test_num_phasing(self):
+        with self.assertRaises(ConstellationNumberError) as error:
+            FlowerConstellation(8, 1, 9, 1, 9.5, 0, 0, 2500, 20)
+
+
 class TestFlower(unittest.TestCase):
 
     # Test cases from "The Flower Constellations - Theory, Design Process and Applications" - Wilkins, P.M
     def setUp(self):
-        self.flower_suite = [FlowerConstellation(8, 1, 9, 1, 9, 0, 0, 2500, 0),
-                             FlowerConstellation(769, 257, 4, 1, 4, 0, 0, 600, 0),
-                             FlowerConstellation(4, 1, 4, 1, 4, 0, 0, 600, 0),
-                             FlowerConstellation(3, 1, 4, 1, 4, 0, 0, 600, 0),
-                             FlowerConstellation(3, 1, 4, 1, 7, 0, 0, 600, 0),
-                             FlowerConstellation(3, 1, 4, 1, 2, 0, 0, 600, 0),
-                             FlowerConstellation(3, 2, 4, 1, 2, 0, 0, 600, 0),
-                             FlowerConstellation(31, 11, 30, 7, 10, 0, 0, 9000, 0),
-                             FlowerConstellation(37, 18, 57, 6, 19, 0, 0, 19702, 0),
-                             FlowerConstellation(15, 7, 49, 23, 49, 0, 0, 19702, 0)]
+        self.flower_suite = [FlowerConstellation(8, 1, 9, 1, 9, 0, 0, 2500, 20),
+                             FlowerConstellation(769, 257, 4, 1, 4, 0, 0, 600, 20),
+                             FlowerConstellation(4, 1, 4, 1, 4, 0, 0, 600, 20),
+                             FlowerConstellation(3, 1, 4, 1, 4, 0, 0, 600, 20),
+                             FlowerConstellation(3, 1, 4, 1, 7, 0, 0, 600, 20),
+                             FlowerConstellation(3, 2, 4, 1, 2, 0, 0, 600, 20),
+                             FlowerConstellation(31, 11, 30, 7, 10, 0, 0, 9000, 20),
+                             FlowerConstellation(37, 18, 57, 6, 19, 0, 0, 19702, 20),
+                             FlowerConstellation(15, 7, 49, 23, 49, 0, 0, 19702, 20)]
 
     def test_num_satellites(self):
         num_sats = []
-        num_sats_test = [9, 4, 4, 4, 4, 2, 4, 30, 57, 49]
+        num_sats_test = [9, 4, 4, 4, 4, 4, 30, 57, 49]
         for idx in range(len(self.flower_suite)):
             num_sats.append(self.flower_suite[idx].num_satellites)
         self.assertEqual(num_sats, num_sats_test)
 
     def test_max_satellites(self):
         max_sats = []
-        max_sats_test = [9, 1028, 4, 4, 7, 2, 4, 110, 342, 343]
+        max_sats_test = [9, 1028, 4, 4, 7, 4, 110, 342, 343]
         for idx in range(len(self.flower_suite)):
             max_sats.append(self.flower_suite[idx].max_sats)
         self.assertEqual(max_sats, max_sats_test)
 
     def test_max_sats_per_orbit(self):
         max_sats_per_orbit = []
-        max_sats_per_orbit_test = [1, 257, 1, 1, 1, 1, 2, 11, 18, 7]
+        max_sats_per_orbit_test = [1, 257, 1, 1, 1, 2, 11, 18, 7]
         for idx in range(len(self.flower_suite)):
             max_sats_per_orbit.append(self.flower_suite[idx].max_sats_per_orbit)
         self.assertEqual(max_sats_per_orbit, max_sats_per_orbit_test)
 
     def test_raan_spacing(self):
-        raan_spacing_test = [-40, -90, -90, -90, -51.42, -180, -180, -252, -113.68, -168.97]
+        raan_spacing_test = [-40, -90, -90, -90, -51.42, -180, -252, -113.68, -168.97]
         for idx in range(len(self.flower_suite)):
             self.assertAlmostEqual(raan_spacing_test[idx], self.flower_suite[idx].raan_spacing, delta=0.1)
 
     def test_mean_anomaly_spacing(self):
-        mean_anomaly_spacing_test = [320, 269.2, 360, 270, 154.28, 180, 270, 350.18, 233.68, 2.099]
+        mean_anomaly_spacing_test = [320, 269.2, 360, 270, 154.28, 270, 350.18, 233.68, 2.099]
         for idx in range(len(self.flower_suite)):
             self.assertAlmostEqual(mean_anomaly_spacing_test[idx], self.flower_suite[idx].mean_anomaly_spacing,
                                    delta=0.1)
@@ -199,8 +272,8 @@ class TestFlower(unittest.TestCase):
     def test_raan_anomaly_complex(self):
         param_list = []
         param_list_test = [[0, 0], [0, 180], [180, 90], [180, 270]]
-        for idx in range(len(self.flower_suite[6].raan)):
-            param_list.append([self.flower_suite[6].raan[idx], self.flower_suite[6].mean_anomaly[idx]])
+        for idx in range(len(self.flower_suite[5].raan)):
+            param_list.append([self.flower_suite[5].raan[idx], self.flower_suite[5].mean_anomaly[idx]])
 
         for idx in range(len(param_list)):
             self.assertTrue(param_list_test[idx] in param_list)
