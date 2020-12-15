@@ -1,5 +1,6 @@
 import math
 import numpy as np
+import time
 
 heavenly_body_radius = {  # [km]
     "earth": 6371,
@@ -66,6 +67,73 @@ def proper_round(num, dec=0):  # Add exception check for no decimal point found
     if num[-1] >= '5':
         return float(num[:-2 - (not dec)] + str(int(num[-2 - (not dec)]) + 1))
     return float(num[:-1])
+
+
+def rotate_np(vecs, angs, ax='x', rpy=None, basis=None):
+    if ax == 'x':
+        rotation = np.array([[np.ones(len(angs)), np.zeros(len(angs)), np.zeros(len(angs))],
+                             [np.zeros(len(angs)), np.cos(angs), -1 * np.sin(angs)],
+                             [np.zeros(len(angs)), np.sin(angs), np.cos(angs)]])
+        rotation_mats = np.einsum('ijk -> kij', rotation)
+        rotated_vecs = np.einsum('ijk,ik->ij', rotation_mats, vecs)
+        return rotated_vecs
+    if ax == 'y':
+        rotation = np.array([[np.cos(angs), np.zeros(len(angs)), np.sin(angs)],
+                             [np.zeros(len(angs)), np.ones(len(angs)), np.zeros(len(angs))],
+                             [-np.sin(angs), np.zeros(len(angs)), np.cos(angs)]])
+        rotation_mats = np.einsum('ijk -> kij', rotation)
+        rotated_vecs = np.einsum('ijk,ik->ij', rotation_mats, vecs)
+        return rotated_vecs
+    if ax == 'z':
+        rotation = np.array([[np.cos(angs), -np.sin(angs), np.zeros(len(angs))],
+                             [np.sin(angs), np.cos(angs), np.zeros(len(angs))],
+                             [np.zeros(len(angs)), np.zeros(len(angs)), np.ones(len(angs))]])
+        rotation_mats = np.einsum('ijk -> kij', rotation)
+        rotated_vecs = np.einsum('ijk,ik->ij', rotation_mats, vecs)
+        return rotated_vecs
+
+    elif ax == 'c':
+
+        zeros = np.zeros(len(rpy))
+        ones = np.ones(len(rpy))
+
+        ang_yaw, ang_pitch, ang_roll = rpy[:, 2], rpy[:, 1], rpy[:, 0]
+        ang_yaw *= math.pi / 180
+        ang_pitch *= math.pi / 180
+        ang_roll *= math.pi / 180
+
+        r_yaw = np.array([[ones, zeros, zeros],
+                          [zeros, np.cos(ang_yaw), -1 * np.sin(ang_yaw)],
+                          [zeros, np.sin(ang_yaw), np.cos(ang_yaw)]])
+        r_pitch = np.array([[np.cos(ang_pitch), zeros, np.sin(ang_pitch)],
+                            [zeros, ones, zeros],
+                            [-np.sin(ang_pitch), zeros, np.cos(ang_pitch)]])
+        r_roll = np.array([[np.cos(ang_roll), zeros, np.sin(ang_roll)],
+                           [zeros, ones, zeros],
+                           [-np.sin(ang_roll), zeros, np.cos(ang_roll)]])
+        r_c = np.einsum('ijk,ijk -> ijk', r_yaw, r_pitch)
+        rotation = np.einsum('ijk,ijk -> ijk', r_c, r_roll)
+
+    elif ax == "custom":
+        ux = basis[:, 0]
+        uy = basis[:, 1]
+        uz = basis[:, 2]
+        a = (1 - np.cos(angs))
+        rotation = np.array([
+            [np.cos(angs) + np.power(ux, 2) * a, ux * uy * a - uz * np.sin(angs), ux * uz * a + uy * np.sin(angs)],
+            [ux * uy * a + uz * np.sin(angs), np.cos(angs) + np.power(uy, 2) * a, uy * uz * a - ux * np.sin(angs)],
+            [uz * ux * a - uy * np.sin(angs), uz * uy * a + ux * np.sin(angs), np.cos(angs) + np.power(uz, 2) * a]])
+
+        rotation_mats_foo = np.einsum('ijk -> kij', rotation)
+        rotated_vecs_foo = np.einsum('ijk,ik->ij', rotation_mats_foo, vecs)
+
+        # print(np.shape(rotation_mats_foo), np.shape(vecs))
+        #
+        # print(np.shape(rotation))
+
+    rotation_mats = np.einsum('ijk -> kij', rotation)
+    rotated_vecs = np.einsum('ijk,ik->ij', rotation_mats, vecs)
+    return rotated_vecs
 
 
 def rotate(vec, ang, ax='x', rpy=[0, 0, 0], basis=None):
@@ -135,6 +203,23 @@ def sphere_intercept(P1, P2, R):
         return True
 
 
+def geographic_distance_np(target_lat, target_lon, lats, lons, radius, radians=False):
+    if not radians:
+        target_lat = target_lat * math.pi / 180
+        lats = lats * math.pi / 180
+        target_lon = target_lon * math.pi / 180
+        lons = lons * math.pi / 180
+
+    # a = np.power(np.sin((lats-target_lat)/2),2)
+    # # return a
+
+    a = np.power(np.sin((lats - target_lat) / 2), 2) + np.cos(target_lat) * np.cos(lats) * np.power(
+        np.sin((lons - target_lon) / 2), 2)
+    # return a
+
+    return radius * 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
+
+
 def geographic_distance(lat1, lon1, lat2, lon2, radius, radians=False):
     if not radians:
         lat1 = lat1 * math.pi / 180
@@ -184,12 +269,54 @@ def sat_to_xyz(satellite):
         ax2 = rotate(ax1, math.pi / 2, 'z')
         ax2 = rotate(ax2, satellite.inclination_r, 'custom',
                      basis=ax1 / math.sqrt(np.sum(ax1 ** 2)))
+
+
         basis = np.cross(ax1 / math.sqrt(np.sum(ax1 ** 2)), ax2 / math.sqrt(np.sum(ax2 ** 2)))
+
+        # print('basis normal', basis)
+
 
         coords = np.array([r, 0, 0])
         coords = rotate(coords, satellite.right_ascension_r, 'z')
         coords = rotate(coords, (satellite.perigee_r + satellite.ta_r), 'custom', basis=basis)
     #
+    return coords
+
+
+def sat_to_xyz_np(satellites):
+    coords = []
+
+    r = satellites[:, 1]
+    right_ascension = satellites[:, 4] * math.pi / 180
+    inclination = satellites[:, 3] * math.pi / 180
+    ta = satellites[:, 6] * math.pi / 180
+    perigee = satellites[:, 5] * math.pi / 180
+
+    if satellites[0, 2] == 0:
+        ax1 = np.column_stack((r, np.zeros(len(r)), np.zeros(len(r))))
+        ax1 = rotate_np(ax1, right_ascension, 'z')
+        ax2 = rotate_np(ax1, np.full(len(ax1), math.pi / 2), 'z')
+
+        basis = np.sqrt(np.sum(np.square(ax1), axis=1))
+
+        ax2 = rotate_np(ax2, inclination, 'custom', basis=ax1 / basis[:, None])
+
+        b1 = np.sqrt(np.sum(np.square(ax1), axis=1))
+        b1 = ax1/basis[:,None]
+        b2 = np.sqrt(np.sum(np.square(ax2), axis=1))
+        b2 = ax2/basis[:,None]
+
+        basis = np.cross(b1,b2)
+        # print('np basis', basis)
+        #
+        # basis = np.cross(ax1 / np.sqrt(np.sum(ax1 ** 2)), ax2 / np.sqrt(np.sum(ax2 ** 2)))
+
+        # print('np basis' , basis)
+
+        coords = np.column_stack((r, np.zeros(len(r)), np.zeros(len(r))))
+        coords = rotate_np(coords, right_ascension, 'z')
+        coords = rotate_np(coords, (perigee + ta), 'custom', basis=basis)
+
     return coords
 
 
@@ -210,6 +337,16 @@ def cart2polar(x, y, z):
     return r, inclination, azimuth
 
 
+def cart2polar_np(vs):
+    r = np.sqrt(np.sum(vs ** 2, axis=1))
+    azimuth = np.arctan2(vs[:, 1], vs[:, 0])
+    inclination = np.arccos(vs[:, 2] / r)
+
+    coords = np.column_stack((r, azimuth, inclination))
+
+    return coords
+
+
 def spherical2geographic(polar, azimuth, radians):
     if radians:
         polar = polar * 180 / math.pi
@@ -227,6 +364,21 @@ def spherical2geographic(polar, azimuth, radians):
     longitude = azimuth
 
     return latitude, longitude
+
+
+def spherical2geographic_np(coordinates, radians):
+    if radians:
+        coordinates = coordinates * 180 / math.pi
+
+    coordinates = (coordinates + 360) % 360
+
+    coordinates[:, 1][coordinates[:, 1] > 180] -= 360
+    coordinates[:, 0][coordinates[:, 0] > 180] = 360 - coordinates[:, 0][coordinates[:, 0] > 180]
+
+    # latitude = 90 - coordinates[:, 0]
+    # longitude = coordinates[:, 1]
+
+    return np.column_stack((90 - coordinates[:, 0], coordinates[:, 1]))
 
 
 def geographic2spherical(latitude, longitude, altitude):

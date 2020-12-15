@@ -28,7 +28,7 @@ def draw_walker_plotly(walker_constellation, satellites=True, orbits=True, links
     if satellites:
         d_sat = 0
 
-        for coords in walker_constellation.as_cartesian():
+        for coords in walker_constellation.as_cartesian_np():
             sat_coords[d_sat] = coords
 
             fig.add_trace(

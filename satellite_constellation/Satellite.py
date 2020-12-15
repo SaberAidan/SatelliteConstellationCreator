@@ -10,7 +10,7 @@ import warnings
 class Satellite(object):
 
     def __init__(self, name, altitude, eccentricity, inclination, right_ascension, perigee, ta, beam,
-                 focus="earth", rads=True, orbital_period=0, semi_major = 0):
+                 focus="earth", rads=True, orbital_period=0, semi_major=0):
         self._name = name
         self._altitude = altitude
         self._focus = focus
@@ -91,8 +91,10 @@ class Satellite(object):
         return heavenly_body_radius[self._focus.lower()]
 
     def __repr__(self):
-        return "{0}, {1}, {2}, {3}, {4}, {5}, {6}".format(self.name, self.altitude, self.eccentricity,
-                                                          self.inclination, self.right_ascension, self.perigee, self.ta)
+        return "{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}".format(self.name, self.altitude, self.true_alt,
+                                                               self.eccentricity,
+                                                               self.inclination, self.right_ascension, self.perigee,
+                                                               self.ta)
 
     def __str__(self):
         return "Satellite Name: {0}, Alt: {1}, e: {2}, " \
@@ -129,6 +131,11 @@ class Satellite(object):
 
         return sat
 
+    def as_numpy(self):
+        return np.array([
+            self.altitude, self.true_alt, self.eccentricity, self.inclination, self.right_ascension,
+            self.perigee, self.ta])
+
     def as_PIGI(self):
 
         catalog_number = '00000'
@@ -144,19 +151,19 @@ class Satellite(object):
         ephemeris = 0
         element_set = '00000'
 
-        inclination = (3 - len(str(self.inclination)))*str(0) + "{:.4f}".format(float(self.inclination))
-        right_ascension = (3 - len(str(self.right_ascension)))*str(0) + "{:.4f}".format(float(self.right_ascension))
-        eccentricity = self.eccentricity*10**7
-        eccentricity = (7 - len(str(int(eccentricity))))*str(0) + "{:.0f}".format(float(eccentricity))
+        inclination = (3 - len(str(self.inclination))) * str(0) + "{:.4f}".format(float(self.inclination))
+        right_ascension = (3 - len(str(self.right_ascension))) * str(0) + "{:.4f}".format(float(self.right_ascension))
+        eccentricity = self.eccentricity * 10 ** 7
+        eccentricity = (7 - len(str(int(eccentricity)))) * str(0) + "{:.0f}".format(float(eccentricity))
 
         p = "{:.0f}".format(float(self.perigee))
-        perigee = (3 - len(str(p)))*str(0) + "{:.4f}".format(float(self.perigee))
+        perigee = (3 - len(str(p))) * str(0) + "{:.4f}".format(float(self.perigee))
 
         m = "{:.0f}".format(float(self.ta))
-        mean_anomaly = (3 - len(m))*str(0) + "{:.4f}".format(float(self.ta))
+        mean_anomaly = (3 - len(m)) * str(0) + "{:.4f}".format(float(self.ta))
 
-        mean_motion = 86801/self.orbital_period
-        mean_motion =(2 - len(str(int(mean_motion))))*str(0) + "{:.8f}".format(mean_motion)
+        mean_motion = 86801 / self.orbital_period
+        mean_motion = (2 - len(str(int(mean_motion)))) * str(0) + "{:.8f}".format(mean_motion)
 
         sat = {"Name": self.name,
                "line1": "{0} {1}{2} {3}{4}{5} {6}{7} {8} {9} {10} {11} {12}".format(

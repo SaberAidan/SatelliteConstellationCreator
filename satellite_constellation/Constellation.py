@@ -60,6 +60,25 @@ class Constellation:
 
         return new_sats
 
+    def propagate_np(self, angle, radians):
+
+        if not radians:
+            angle_r = deg_2_rad(angle)
+            angle_d = angle
+        else:
+            angle_r = angle
+            angle_d = rad_2_deg(angle)
+
+        prop_sats = copy.deepcopy(self.satellites)
+        new_sats = []
+
+        for satellite in prop_sats:
+            satellite.ta_r = satellite.ta_r + angle_r
+            satellite.ta = satellite.ta + angle_d
+            new_sats.append(satellite)
+
+        return new_sats
+
     def __str__(self):
         sat_string = ""
         for sat in self.satellites:
@@ -79,6 +98,13 @@ class Constellation:
         warnings.warn("XML support is depreciated and not supported from PIGI 0.8.5 onward", DeprecationWarning)
         return self.as_pigi_output()
 
+    def as_numpy(self):
+
+        sats = np.array(self.satellites)
+        b = np.array([l.as_numpy() for l in sats])
+
+        return b
+
     def as_pigi_output(self):
 
         sat_list = []
@@ -92,7 +118,11 @@ class Constellation:
 
         return file_name, sat_json
 
+    def as_cartesian_np(self, custom_satellites=None):
+        return sat_to_xyz_np(self.as_numpy())
+
     def as_cartesian(self, custom_satellites=None):
+        # Convert to numpy
 
         satellites = []
         if custom_satellites is not None:
@@ -109,7 +139,7 @@ class Constellation:
 
         return cart_coordinates
 
-    def as_spherical(self, custom_satellites=None):
+    def as_spherical(self, custom_satellites=None):  # Convert to numpy
 
         if custom_satellites is not None:
             satellites = custom_satellites
@@ -126,7 +156,19 @@ class Constellation:
 
         return spherical_coordinates
 
-    def as_geographic(self, custom_satellites=None):
+    def as_spherical_np(self, custom_satellites=None):  # Convert to numpy
+
+        if custom_satellites is not None:
+            satellites = custom_satellites
+        else:
+            satellites = self.satellites
+
+        cartesian_coordinates = self.as_cartesian_np(satellites)
+        spherical_coordinates = cart2polar_np(cartesian_coordinates)
+
+        return spherical_coordinates
+
+    def as_geographic(self, custom_satellites=None):  # Convert to numpy
 
         satellites = []
         if custom_satellites is not None:
@@ -142,6 +184,18 @@ class Constellation:
                                                                  coordinates[2],
                                                                  radians=True)
             d_sat += 1
+
+        return geographic_coordinates
+
+    def as_geographic_np(self, custom_satellites=None):  # Convert to numpy
+
+        if custom_satellites is not None:
+            satellites = custom_satellites
+        else:
+            satellites = self.satellites
+
+        spherical_coordinates = self.as_spherical_np(satellites)
+        geographic_coordinates = spherical2geographic_np(spherical_coordinates[:, [1, 2]], radians=True)
 
         return geographic_coordinates
 
@@ -224,7 +278,7 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
         total_area = area * self.num_satellites
         return r, theta, total_area
 
-    def __build_satellites(self):
+    def __build_satellites(self):  # Convert to numpy
         satellites = []
         for i in range(self.num_satellites):
             sat_num = i + self.start_num + 1
@@ -366,7 +420,7 @@ class SOCConstellation(Constellation):  # This is really just a part of a walker
 
         return all_perigees
 
-    def __build_satellites(self):
+    def __build_satellites(self):  # Convert to numpy
         satellites = []
         for i in range(self.num_streets):
             for j in range(self.sats_per_street):
@@ -482,7 +536,7 @@ class FlowerConstellation(Constellation):
         min_revisit_time = self.num_days / self.max_sats
         return min_revisit_time
 
-    def __build_satellites(self):
+    def __build_satellites(self):  # Convert to numpy
         satellites = []
         for i in range(self.num_satellites):
             sat_name = i

@@ -1,4 +1,5 @@
 from satellite_constellation.utils import *
+import time
 
 
 class orbital_analysis:
@@ -6,18 +7,8 @@ class orbital_analysis:
     def __init__(self, constellation):
 
         self.constellation = constellation
-        # self.num_satellites = constellation.num_satellites
-        # self.orbital_period = constellation.orbital_period
-        # self.altitude = constellation.altitude
-        # self.beam_width = constellation.beam_width
-        # self.eccentricity = constellation.eccentricity
-        # self.inclination = constellation.inclination
-        # self.focus = constellation.focus
-        # self.name = constellation.name
-        # self.satellites = []
-        # self.earth_coverage_radius = 0
 
-    def calculate_revisit(self, target_long, target_lat):
+    def calculate_revisit(self, target_long, target_lat):  # Convert to numpy
 
         d_prop = 1
         tracking = True
@@ -30,7 +21,7 @@ class orbital_analysis:
 
         num_sats = []
 
-        while len(gap_times) < 10:
+        while len(gap_times) < overflow:
 
             overflow_ctr += 1
 
@@ -42,6 +33,7 @@ class orbital_analysis:
                     return 0, 0
 
             d_theta = d_prop * 0.5 * math.pi / 180
+            # print(d_prop)
 
             seconds = (d_theta / (2 * math.pi)) * self.constellation.orbital_period
             longitudinal_drift = seconds * constants["wE"] * 180 / math.pi
@@ -50,6 +42,7 @@ class orbital_analysis:
 
             in_view = False
             num_sats_round = 0
+            start = time.process_time()
 
             for satellite in satellites:
 
@@ -71,9 +64,129 @@ class orbital_analysis:
 
             d_prop += 1
 
-        return np.mean(num_sats), np.mean(gap_times), np.std(gap_times), np.mean(view_times), np.std(view_times)
+        return np.mean(gap_times), np.std(gap_times), np.mean(view_times), np.std(view_times)
 
-    def check_sat_FOV(self, satellite, target_lat, target_lon, drift, threshold=0):
+    def calculate_revisit_numpy(self, target_long, target_lat):  # Convert to numpy
+
+        d_prop = 1
+        tracking = True
+        start_time = -1
+        finish_time = -1
+        gap_times = []
+        view_times = []
+        overflow_ctr = 0
+        overflow = 10000
+
+        num_sats = []
+
+        while len(gap_times) < overflow:
+
+            overflow_ctr += 1
+
+            if overflow_ctr > overflow:
+                if len(gap_times) > 0:
+                    return np.mean(gap_times), np.std(gap_times)
+                else:
+                    print("Constant coverage")
+                    return 0, 0
+
+            d_theta = d_prop * 0.5 * math.pi / 180
+            # print(d_prop)
+
+            seconds = (d_theta / (2 * math.pi)) * self.constellation.orbital_period
+            longitudinal_drift = seconds * constants["wE"] * 180 / math.pi
+
+            satellites = self.constellation.propagate(d_theta, radians=True)
+
+            in_view = False
+            num_sats_round = 0
+            start = time.process_time()
+
+            for satellite in satellites:
+
+                if self.check_sat_FOV(satellite, target_lat, target_long, longitudinal_drift):
+                    in_view = True
+                    num_sats_round += 1
+
+            num_sats.append(num_sats_round)
+
+            if in_view and tracking == False:  # Has just entered FOV
+                tracking = True
+                start_time = self.constellation.orbital_period * d_theta / (2 * math.pi)
+                gap_times.append(start_time - finish_time)
+
+            if not in_view and tracking == True:  # Has just left FOV
+                tracking = False
+                finish_time = self.constellation.orbital_period * d_theta / (2 * math.pi)
+                view_times.append(finish_time - start_time)
+
+            d_prop += 1
+
+        return np.mean(gap_times), np.std(gap_times), np.mean(view_times), np.std(view_times)
+
+    # def revisit_numpy(self, target_long, target_lat):
+    #
+    #     d_prop = 1
+    #     tracking = True
+    #     start_time = -1
+    #     finish_time = -1
+    #     gap_times = []
+    #     view_times = []
+    #     overflow_ctr = 0
+    #     overflow = 10000
+    #
+    #     num_sats = []
+    #
+    #     while len(gap_times) < overflow:
+    #
+    #         overflow_ctr += 1
+    #
+    #         if overflow_ctr > overflow:
+    #             if len(gap_times) > 0:
+    #                 return np.mean(gap_times), np.std(gap_times)
+    #             else:
+    #                 print("Constant coverage")
+    #                 return 0, 0
+    #
+    #         d_theta = d_prop * 0.5 * math.pi / 180
+    #
+    #         seconds = (d_theta / (2 * math.pi)) * self.constellation.orbital_period
+    #         longitudinal_drift = seconds * constants["wE"] * 180 / math.pi
+    #
+    #         satellites = np.array(self.constellation.propagate(d_theta, radians=True))
+    #
+    #         in_view = False
+    #
+    #         coords = self.constellation.as_geographic_np(satellites)
+    #
+    #         coords[:, 1] = coords[:, 1] - longitudinal_drift
+    #
+    #         coords[coords > 180] = coords[coords > 180] - 180
+    #         coords[coords < -180] = coords[coords < -180] + 360
+    #
+    #         coords = coords * math.pi / 180
+    #
+    #         dist = geographic_distance_np(target_lat, target_long, coords[:, 0], coords[:, 1],
+    #                                       heavenly_body_radius[self.constellation.focus], radians=True)
+    #
+    #         if (dist < self.constellation.earth_coverage_radius).any():
+    #             in_view = True
+    #
+    #         if in_view and tracking == False:  # Has just entered FOV
+    #             tracking = True
+    #             start_time = self.constellation.orbital_period * d_theta / (2 * math.pi)
+    #             gap_times.append(start_time - finish_time)
+    #
+    #         if not in_view and tracking == True:  # Has just left FOV
+    #             tracking = False
+    #             finish_time = self.constellation.orbital_period * d_theta / (2 * math.pi)
+    #             view_times.append(finish_time - start_time)
+    #
+    #         d_prop += 1
+    #
+    #     return np.mean(gap_times), np.std(gap_times), np.mean(view_times), np.std(view_times)
+
+    def check_sat_FOV(self, satellite, target_lat, target_lon, drift, threshold=0):  # Convert to numpy
 
         coords = sat_to_xyz(satellite)
         spherical_coords = cart2polar(coords[0], coords[1], coords[2])
@@ -91,6 +204,7 @@ class orbital_analysis:
         distance = geographic_distance(target_lat, target_lon, lat_i, long_i,
                                        heavenly_body_radius[self.constellation.focus],
                                        radians=False)
+        # print('normal' , distance)
 
         if threshold == 0:
             if self.constellation.earth_coverage_radius == 0:
@@ -105,7 +219,7 @@ class orbital_analysis:
 
         return in_view
 
-    def calculate_satellite_coverage(self, satellite):
+    def calculate_satellite_coverage(self, satellite):  # Convert to numpy
 
         if satellite.eccentricity > 0:
 
@@ -139,7 +253,7 @@ class orbital_analysis:
         coverage_radius = heavenly_body_radius[self.constellation.focus] * theta
         return coverage_radius, theta
 
-    def find_links(self, custom_satellites=None):
+    def find_links(self, custom_satellites=None):  # Convert to numpy
 
         sat_coords = self.constellation.as_cartesian(self.constellation.satellites)
         average_links = np.array([])
@@ -193,7 +307,7 @@ class orbital_analysis:
 
             d_lat += resolution
 
-        return area
+        return area  # Convert to numpy
 
     def check_ground_FOV(self, satellite, lat, lon, FOV, drift, radians=False):
 
@@ -228,7 +342,7 @@ class orbital_analysis:
         if distance > max_radius:
             return False
         else:
-            return True
+            return True  # Convert to numpy
 
     def ground_station_visibility(self, station_lat, station_long, station_fov, radians=False):
 
@@ -239,11 +353,11 @@ class orbital_analysis:
         gap_times = []
         view_times = []
         overflow_ctr = 0
-        overflow = 10000
+        overflow = 10
 
         num_sats = []
 
-        while len(gap_times) < 10:
+        while len(gap_times) < overflow:
 
             overflow_ctr += 1
 
@@ -285,4 +399,5 @@ class orbital_analysis:
 
             d_prop += 1
 
-        return np.mean(num_sats), np.mean(gap_times), np.std(gap_times), np.mean(view_times), np.std(view_times)
+        return np.mean(num_sats), np.mean(gap_times), np.std(gap_times), np.mean(view_times), np.std(
+            view_times)  # Convert to numpy
