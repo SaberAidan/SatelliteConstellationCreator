@@ -28,7 +28,7 @@ def draw_walker_plotly(walker_constellation, satellites=True, orbits=True, links
     if satellites:
         d_sat = 0
 
-        for coords in walker_constellation.as_cartesian_np():
+        for coords in walker_constellation.as_cartesian():
             sat_coords[d_sat] = coords
 
             fig.add_trace(
@@ -68,7 +68,7 @@ def draw_walker_plotly(walker_constellation, satellites=True, orbits=True, links
             basis = np.cross(ax1 / math.sqrt(np.sum(ax1 ** 2)), ax2 / math.sqrt(np.sum(ax2 ** 2)))
 
             for idk in range(0, 100):
-                coords = np.array(polar2cart(rE, walker_constellation.earth_coverage_angle/2, t[idk]))
+                coords = np.array(polar2cart(rE, walker_constellation.earth_coverage_angle, t[idk]))
                 coords = rotate(coords, math.pi / 2, 'y')
                 coords = rotate(coords, (walker_constellation.raan[idy]) * math.pi / 180, 'z')
                 coords = rotate(coords, (walker_constellation.perigee_positions[idy] + walker_constellation.ta[idy])
@@ -259,7 +259,7 @@ def draw_soc_plotly(SOC_Constellation, satellites=True, orbits=True, links=False
                 projection_coords = np.array([[0, 0, 0]])
                 ctr = idz + idy * SOC_Constellation.sats_per_street
                 for idk in range(0, 100):
-                    coords = np.array(polar2cart(rE, SOC_Constellation.earth_coverage_angle/2, t[idk]))
+                    coords = np.array(polar2cart(rE, SOC_Constellation.earth_coverage_angle, t[idk]))
                     coords = rotate(coords, (SOC_Constellation.perigee_positions[ctr] + SOC_Constellation.ta[
                         ctr] + 90) * math.pi / 180, 'x')
                     coords = rotate(coords, (SOC_Constellation.raan[idy] + 90) * math.pi / 180, 'z')

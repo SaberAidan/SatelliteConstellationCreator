@@ -203,6 +203,33 @@ def sphere_intercept(P1, P2, R):
         return True
 
 
+def sphere_intercept_np(P1, P2, R):
+    x1 = P1[0]
+    x2 = P2[:, 0]
+    y1 = P1[1]
+    y2 = P2[:, 1]
+    z1 = P1[2]
+    z2 = P2[:, 2]
+
+    a = np.power(x2 - x1, 2) + np.power(y2 - y1, 2) + np.power(z2 - z1, 2)
+    b = 2 * (x1 * (x2 - x1) + y1 * (y2 - y1) + z1 * (z2 - z1))
+    c = np.power(x1, 2) + np.power(y1, 2) + np.power(z1, 2) - np.power(R, 2)
+
+    determinant = np.power(b, 2) - 4 * a * c
+
+    results = np.full((len(P2)), True, dtype=bool)
+    results[determinant < 0] = False
+    results[determinant >= 0] = True
+    #
+    return results
+    # if determinant < 0:
+    #     return False
+    # elif determinant == 0:
+    #     return True
+    # else:
+    #     return True
+
+
 def geographic_distance_np(target_lat, target_lon, lats, lons, radius, radians=False):
     if not radians:
         target_lat = target_lat * math.pi / 180
@@ -210,12 +237,8 @@ def geographic_distance_np(target_lat, target_lon, lats, lons, radius, radians=F
         target_lon = target_lon * math.pi / 180
         lons = lons * math.pi / 180
 
-    # a = np.power(np.sin((lats-target_lat)/2),2)
-    # # return a
-
     a = np.power(np.sin((lats - target_lat) / 2), 2) + np.cos(target_lat) * np.cos(lats) * np.power(
         np.sin((lons - target_lon) / 2), 2)
-    # return a
 
     return radius * 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
 
@@ -250,6 +273,9 @@ def sat_to_xyz(satellite):
 
     if satellite.eccentricity > 0:
 
+        # print('ra',satellite.right_ascension_r)
+        # print('i',satellite.inclination_r)
+
         a = satellite.semi_major
         b = a * math.sqrt(1 - math.pow(satellite.eccentricity, 2))
         f = (satellite.altitude + heavenly_body_radius[satellite._focus]) * 10 ** 3
@@ -270,11 +296,7 @@ def sat_to_xyz(satellite):
         ax2 = rotate(ax2, satellite.inclination_r, 'custom',
                      basis=ax1 / math.sqrt(np.sum(ax1 ** 2)))
 
-
         basis = np.cross(ax1 / math.sqrt(np.sum(ax1 ** 2)), ax2 / math.sqrt(np.sum(ax2 ** 2)))
-
-        # print('basis normal', basis)
-
 
         coords = np.array([r, 0, 0])
         coords = rotate(coords, satellite.right_ascension_r, 'z')
@@ -284,9 +306,10 @@ def sat_to_xyz(satellite):
 
 
 def sat_to_xyz_np(satellites):
-    coords = []
-
     r = satellites[:, 1]
+    eccentricity = satellites[:, 2]
+    semi_major = satellites[:, 8]
+
     right_ascension = satellites[:, 4] * math.pi / 180
     inclination = satellites[:, 3] * math.pi / 180
     ta = satellites[:, 6] * math.pi / 180
@@ -302,20 +325,27 @@ def sat_to_xyz_np(satellites):
         ax2 = rotate_np(ax2, inclination, 'custom', basis=ax1 / basis[:, None])
 
         b1 = np.sqrt(np.sum(np.square(ax1), axis=1))
-        b1 = ax1/basis[:,None]
+        b1 = ax1 / basis[:, None]
         b2 = np.sqrt(np.sum(np.square(ax2), axis=1))
-        b2 = ax2/basis[:,None]
+        b2 = ax2 / basis[:, None]
 
-        basis = np.cross(b1,b2)
-        # print('np basis', basis)
-        #
-        # basis = np.cross(ax1 / np.sqrt(np.sum(ax1 ** 2)), ax2 / np.sqrt(np.sum(ax2 ** 2)))
-
-        # print('np basis' , basis)
+        basis = np.cross(b1, b2)
 
         coords = np.column_stack((r, np.zeros(len(r)), np.zeros(len(r))))
         coords = rotate_np(coords, right_ascension, 'z')
         coords = rotate_np(coords, (perigee + ta), 'custom', basis=basis)
+
+    else:
+
+        b = semi_major * np.sqrt(1 - np.power(eccentricity, 2))
+        f = r * 10 ** 3
+        disp = semi_major - f
+
+        ang = ta + math.pi
+
+        coords = np.column_stack((disp + semi_major * np.cos(ang), b * np.sin(ang), np.zeros(len(b)))) * 10 ** -3
+        coords = rotate_np(coords, right_ascension, 'z')
+        coords = rotate_np(coords, inclination, 'x')
 
     return coords
 
@@ -326,6 +356,16 @@ def polar2cart(r, phi, theta):
         r * math.sin(theta) * math.sin(phi),
         r * math.cos(phi)
     ]
+
+
+def polar2cart_np(vs):
+    r = vs[:, 0]
+    phi = vs[:, 1]
+    theta = vs[:, 2]
+    coords = np.column_stack(
+        (r * math.sin(phi) * math.cos(theta), r * math.sin(theta) * math.sin(phi), r * math.cos(phi)))
+
+    return coords
 
 
 def cart2polar(x, y, z):
@@ -342,7 +382,7 @@ def cart2polar_np(vs):
     azimuth = np.arctan2(vs[:, 1], vs[:, 0])
     inclination = np.arccos(vs[:, 2] / r)
 
-    coords = np.column_stack((r, azimuth, inclination))
+    coords = np.column_stack((r, inclination, azimuth))
 
     return coords
 

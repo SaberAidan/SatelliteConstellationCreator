@@ -10,6 +10,20 @@ import numpy as np
 import copy
 
 
+def from_numpy(satellites):
+
+    sats = []
+    # start = time.process_time()
+
+    for i in range(len(satellites)):
+        name = str(i)
+        sats.append(
+            Satellite(name, satellites[i][0], satellites[i][2], satellites[i][3], satellites[i][4],
+                      satellites[i][5], satellites[i][6], satellites[i][7], rads=False))
+
+    return list(sats)
+
+
 class Constellation:
     """
     Class to implement a layer of abstraction for satellite constellations
@@ -69,13 +83,10 @@ class Constellation:
             angle_r = angle
             angle_d = rad_2_deg(angle)
 
-        prop_sats = copy.deepcopy(self.satellites)
-        new_sats = []
+        prop_sats = self.as_numpy(self.satellites)
 
-        for satellite in prop_sats:
-            satellite.ta_r = satellite.ta_r + angle_r
-            satellite.ta = satellite.ta + angle_d
-            new_sats.append(satellite)
+        prop_sats[:, 6] += angle_d
+        new_sats = from_numpy(prop_sats)
 
         return new_sats
 
@@ -98,9 +109,13 @@ class Constellation:
         warnings.warn("XML support is depreciated and not supported from PIGI 0.8.5 onward", DeprecationWarning)
         return self.as_pigi_output()
 
-    def as_numpy(self):
+    def as_numpy(self, custom_satellites=None):
 
-        sats = np.array(self.satellites)
+        if custom_satellites is None:
+            sats = np.array(self.satellites)
+        else:
+            sats = np.array(custom_satellites)
+
         b = np.array([l.as_numpy() for l in sats])
 
         return b
@@ -119,7 +134,13 @@ class Constellation:
         return file_name, sat_json
 
     def as_cartesian_np(self, custom_satellites=None):
-        return sat_to_xyz_np(self.as_numpy())
+
+        if custom_satellites is not None:
+            satellites = custom_satellites
+        else:
+            satellites = self.as_numpy()
+
+        return sat_to_xyz_np(self.as_numpy(satellites))
 
     def as_cartesian(self, custom_satellites=None):
         # Convert to numpy
@@ -164,6 +185,7 @@ class Constellation:
             satellites = self.satellites
 
         cartesian_coordinates = self.as_cartesian_np(satellites)
+
         spherical_coordinates = cart2polar_np(cartesian_coordinates)
 
         return spherical_coordinates
@@ -194,7 +216,9 @@ class Constellation:
         else:
             satellites = self.satellites
 
+        # start_2 = time.process_time()
         spherical_coordinates = self.as_spherical_np(satellites)
+        # print("Spherical calc time", time.process_time() - start_2, 's')
         geographic_coordinates = spherical2geographic_np(spherical_coordinates[:, [1, 2]], radians=True)
 
         return geographic_coordinates

@@ -94,7 +94,7 @@ class Satellite(object):
         return "{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}".format(self.name, self.altitude, self.true_alt,
                                                                self.eccentricity,
                                                                self.inclination, self.right_ascension, self.perigee,
-                                                               self.ta)
+                                                               self.ta, self.semi_major)
 
     def __str__(self):
         return "Satellite Name: {0}, Alt: {1}, e: {2}, " \
@@ -134,7 +134,7 @@ class Satellite(object):
     def as_numpy(self):
         return np.array([
             self.altitude, self.true_alt, self.eccentricity, self.inclination, self.right_ascension,
-            self.perigee, self.ta])
+            self.perigee, self.ta, self.beam, self.semi_major])
 
     def as_PIGI(self):
 
