@@ -68,7 +68,7 @@ def draw_walker_plotly(walker_constellation, satellites=True, orbits=True, links
             half_width = (walker_constellation.beam_width/2 * math.pi/180)
             if half_width > np.arcsin(rE / r):
                 half_width = np.arcsin(rE / r)
-            theta_2 = np.arcsin(np.sin(half_width) / ((rE) / (r))) - half_width
+            theta_2 = np.arcsin(np.sin(half_width) / (rE / r)) - half_width
 
             walker_constellation.earth_coverage_angle = theta_2
 

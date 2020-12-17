@@ -418,7 +418,7 @@ class orbital_analysis:
 
         half_width = (satellites[:, 7] / 2) * math.pi / 180
 
-        half_width[half_width > np.arcsin((true_alt - alt) / true_alt)] = np.arcsin((true_alt - alt) / true_alt)
+        half_width[half_width > np.arcsin((true_alt - alt) / true_alt)] = np.arcsin((true_alt - alt) / true_alt)[half_width > np.arcsin((true_alt - alt) / true_alt)]
 
         theta_2 = np.arcsin((np.sin(half_width) / ((true_alt - alt) / true_alt))) - half_width
         r_2 = (true_alt - alt) * theta_2
@@ -438,8 +438,6 @@ class orbital_analysis:
 
         d_prop = 1
         overflow_ctr = 0
-        # step_res = 1
-        # overflow = 360
 
         num_sats = []
 
@@ -481,7 +479,7 @@ class orbital_analysis:
           :param custom_satellites: List of satellites to use in coverage calculation
           :param resolution:
 
-          """
+        """
 
         area = 0
         coords = self.constellation.as_geographic()

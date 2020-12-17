@@ -314,7 +314,6 @@ def sat_to_xyz(satellite):
     Ohm = satellite.right_ascension_r
     E = math.sqrt(1 - e ** 2) * math.sin(satellite.ta_r) / (1 + e * math.cos(satellite.ta_r))
 
-
     # print('r', r, 'e', e, 'a', a, 'i', i, 'w', w, 'ohm', Ohm, 'E', E)
 
     x = a * ((math.cos(E) - e) * (math.cos(w) * math.cos(Ohm) - math.sin(w) * math.sin(Ohm) * math.cos(i)) + math.pow(
@@ -333,6 +332,16 @@ def sat_to_xyz(satellite):
 
 def sat_to_xyz_np(satellites):
 
+    """
+
+    Determines the cartesian coordinates of an array of satellites via their orbital elements \n
+    Method from https://ntrs.nasa.gov/citations/19650015945
+
+    :param satellites: The array of satellites to have coordinates determined
+
+    """
+
+
     r = satellites[:, 1]
     e = satellites[:, 2]
     a = satellites[:, 8]
@@ -344,7 +353,6 @@ def sat_to_xyz_np(satellites):
 
     E = np.sqrt(1 - e ** 2) * np.sin(ta) / (1 + e * np.cos(ta))
 
-    # print('r', r, 'e', e, 'a', a, 'i', i, 'w', w, 'ohm', Ohm, 'E', E)
 
     x = a * ((np.cos(E) - e) * (np.cos(w) * np.cos(Ohm) - np.sin(w) * np.sin(Ohm) * np.cos(i)) + np.power(
         1 - np.power(e, 2), 0.5) * np.sin(E) * (
