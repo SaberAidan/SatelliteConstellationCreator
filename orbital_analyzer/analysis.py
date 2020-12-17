@@ -413,27 +413,17 @@ class orbital_analysis:
         :param satellites: List of satellites to get coverage for
         """
 
-        coords = sat_to_xyz_np(satellites)
-        r = np.sqrt(np.sum(np.square(coords), axis=1))
-
         true_alt = satellites[:, 1]
         alt = satellites[:, 0]
 
         half_width = (satellites[:, 7] / 2) * math.pi / 180
 
-        max_width = np.arctan((true_alt - alt) / true_alt)
+        half_width[half_width > np.arcsin((true_alt - alt) / true_alt)] = np.arcsin((true_alt - alt) / true_alt)
 
-        half_width[half_width > max_width] = max_width[half_width > max_width]
+        theta_2 = np.arcsin((np.sin(half_width) / ((true_alt - alt) / true_alt))) - half_width
+        r_2 = (true_alt - alt) * theta_2
 
-        x = r * np.tan(half_width)
-
-        x[x > (true_alt - alt)] = (true_alt - alt)[x > (true_alt - alt)]
-
-        theta = np.arcsin(x / (true_alt - alt))
-
-        coverage_radius = (true_alt - alt) * theta
-
-        return coverage_radius, theta
+        return r_2, theta_2
 
     def find_links_np(self, step_res=1, num_iterations=360):
 
@@ -499,23 +489,21 @@ class orbital_analysis:
         lat = np.arange(-90, 90, resolution)
         lon = np.arange(-180, 180, resolution)
 
-        centres = np.array(np.meshgrid(lat, lon)).T.reshape(180, 360, 2) + 0.5
-        print(np.shape(centres))
+        centres = np.array(np.meshgrid(lat, lon))
+        centres = centres.T.reshape(len(lat), len(lon), 2) + resolution / 2
 
         threshold = self.calculate_satellite_coverage_np(self.constellation.as_numpy())
-        # print(threshold[0])
 
         for i in centres:
             for j in i:
                 distance = geographic_distance_np(j[0], j[1], coords[:, 0], coords[:, 1],
                                                   heavenly_body_radius[self.constellation.focus], radians=False)
-                # hits = np.where(distance < threshold)
 
                 if np.any(distance < threshold[0]):
-                    area_i = geographic_area(j[0] - 0.5, j[1] - 0.5, j[0] + 0.5, j[1] + 0.5,
+                    area_i = geographic_area(j[0] - resolution / 2, j[1] - resolution / 2, j[0] + resolution / 2,
+                                             j[1] + resolution / 2,
                                              heavenly_body_radius[self.constellation.focus], radians=False)
                     area += area_i
-        # print(threshold[0])
 
         return area  # Convert to numpy
 

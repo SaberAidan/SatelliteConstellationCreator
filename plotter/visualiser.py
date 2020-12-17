@@ -59,19 +59,25 @@ def draw_walker_plotly(walker_constellation, satellites=True, orbits=True, links
             t = np.linspace(0, 2 * math.pi, 100)
             projection_coords = np.array([[0, 0, 0]])
 
-            ax1 = np.array([r, 0, 0])
-            ax1 = rotate(ax1, walker_constellation.raan[idy] * math.pi / 180, 'z')
-            ax2 = rotate(ax1, math.pi / 2, 'z')
-            ax2 = rotate(ax2, walker_constellation.inclination * math.pi / 180, 'custom',
-                         basis=ax1 / math.sqrt(np.sum(ax1 ** 2)))
-            basis = np.cross(ax1 / math.sqrt(np.sum(ax1 ** 2)), ax2 / math.sqrt(np.sum(ax2 ** 2)))
+            basis = v_r / math.sqrt(np.sum(v_r ** 2))
+
+            basis = np.array(basis)
+            x = np.array([0, 1, 0])
+            basis2 = np.cross(basis, x)
+
+            half_width = (walker_constellation.beam_width/2 * math.pi/180)
+            if half_width > np.arcsin(rE / r):
+                half_width = np.arcsin(rE / r)
+            theta_2 = np.arcsin(np.sin(half_width) / ((rE) / (r))) - half_width
+
+            walker_constellation.earth_coverage_angle = theta_2
+
+            start = rotate(v_r, walker_constellation.earth_coverage_angle, 'custom', basis=basis2)
 
             for idk in range(0, 100):
-                coords = np.array(polar2cart(rE, walker_constellation.earth_coverage_angle, t[idk]))
-                coords = rotate(coords, math.pi / 2, 'y')
-                coords = rotate(coords, (walker_constellation.raan[idy]) * math.pi / 180, 'z')
-                coords = rotate(coords, (walker_constellation.perigee_positions[idy] + walker_constellation.ta[idy])
-                                * math.pi / 180, 'custom', basis=basis)
+                coords = rotate(start, t[idk], 'custom', basis=basis)
+                coords = rE * coords/math.sqrt(np.sum(coords**2))
+
                 projection_coords = np.append(projection_coords, [coords], axis=0)
 
             fig.add_trace(
@@ -145,7 +151,7 @@ def draw_flower_plotly(flower_constellation, satellites=True, orbits=True, links
     if satellites:
 
         for sats in flower_constellation.satellites:
-            coord = sat_to_xyz_2(sats)
+            coord = sat_to_xyz(sats)
             fig.add_trace(
                 go.Scatter3d(x=[coord[0]], y=[coord[1]], z=[coord[2]], mode='markers', name='real_sat '
                                                                                             + "flower",
@@ -243,7 +249,7 @@ def draw_soc_plotly(SOC_Constellation, satellites=True, orbits=True, links=False
         d_sat = 0
 
         for sats in SOC_Constellation.satellites:
-            coord = sat_to_xyz_2(sats)
+            coord = sat_to_xyz(sats)
             fig.add_trace(
                 go.Scatter3d(x=[coord[0]], y=[coord[1]], z=[coord[2]], mode='markers', name='real_sat '
                                                                                             + str(

@@ -1,6 +1,5 @@
 import math
 import numpy as np
-import time
 
 heavenly_body_radius = {  # [km]
     "earth": 6371,
@@ -304,43 +303,6 @@ def geographic_area(lat1, lon1, lat2, lon2, radius, radians=False):
     return area
 
 
-# def sat_to_xyz(satellite):
-#     r = satellite.true_alt
-#
-#     if satellite.eccentricity > 0:
-#
-#         # print('ra',satellite.right_ascension_r)
-#         # print('i',satellite.inclination_r)
-#
-#         a = satellite.semi_major
-#         b = a * math.sqrt(1 - math.pow(satellite.eccentricity, 2))
-#         f = (satellite.altitude + heavenly_body_radius[satellite._focus]) * 10 ** 3
-#         disp = a - f
-#
-#         ang = deg_2_rad(satellite.ta + 180)
-#
-#         x_i, y_i, z_i = disp + a * np.cos(ang), b * np.sin(ang), 0
-#         coords = np.array([x_i, y_i, z_i]) * 10 ** -3
-#         coords = rotate(coords, deg_2_rad(satellite.right_ascension), 'z')
-#         coords = rotate(coords, deg_2_rad(satellite.inclination), 'x')
-#
-#     else:
-#
-#         ax1 = np.array([r, 0, 0])
-#         ax1 = rotate(ax1, satellite.right_ascension_r, 'z')
-#         ax2 = rotate(ax1, math.pi / 2, 'z')
-#         ax2 = rotate(ax2, satellite.inclination_r, 'custom',
-#                      basis=ax1 / math.sqrt(np.sum(ax1 ** 2)))
-#
-#         basis = np.cross(ax1 / math.sqrt(np.sum(ax1 ** 2)), ax2 / math.sqrt(np.sum(ax2 ** 2)))
-#
-#         coords = np.array([r, 0, 0])
-#         coords = rotate(coords, satellite.right_ascension_r, 'z')
-#         coords = rotate(coords, (satellite.perigee_r + satellite.ta_r), 'custom', basis=basis)
-#
-#     return coords
-
-
 def sat_to_xyz(satellite):
     r = satellite.true_alt
     e = satellite.eccentricity
@@ -396,51 +358,6 @@ def sat_to_xyz_np(satellites):
             np.cos(w) * np.sin(i)))
 
     return np.column_stack((x, y, z))
-
-
-# def sat_to_xyz_np(satellites):
-#     r = satellites[:, 1]
-#     eccentricity = satellites[:, 2]
-#     semi_major = satellites[:, 8]
-#
-#     right_ascension = satellites[:, 4] * math.pi / 180
-#     inclination = satellites[:, 3] * math.pi / 180
-#     ta = satellites[:, 6] * math.pi / 180
-#     perigee = satellites[:, 5] * math.pi / 180
-#
-#     if satellites[0, 2] == 0:
-#         ax1 = np.column_stack((r, np.zeros(len(r)), np.zeros(len(r))))
-#         ax1 = rotate_np(ax1, right_ascension, 'z')
-#         ax2 = rotate_np(ax1, np.full(len(ax1), math.pi / 2), 'z')
-#
-#         basis = np.sqrt(np.sum(np.square(ax1), axis=1))
-#
-#         ax2 = rotate_np(ax2, inclination, 'custom', basis=ax1 / basis[:, None])
-#
-#         # b1 = np.sqrt(np.sum(np.square(ax1), axis=1))
-#         b1 = ax1 / basis[:, None]
-#         # b2 = np.sqrt(np.sum(np.square(ax2), axis=1))
-#         b2 = ax2 / basis[:, None]
-#
-#         basis = np.cross(b1, b2)
-#
-#         coords = np.column_stack((r, np.zeros(len(r)), np.zeros(len(r))))
-#         coords = rotate_np(coords, right_ascension, 'z')
-#         coords = rotate_np(coords, (perigee + ta), 'custom', basis=basis)
-#
-#     else:
-#
-#         b = semi_major * np.sqrt(1 - np.power(eccentricity, 2))
-#         f = r * 10 ** 3
-#         disp = semi_major - f
-#
-#         ang = ta + math.pi
-#
-#         coords = np.column_stack((disp + semi_major * np.cos(ang), b * np.sin(ang), np.zeros(len(b)))) * 10 ** -3
-#         coords = rotate_np(coords, right_ascension, 'z')
-#         coords = rotate_np(coords, inclination, 'x')
-#
-#     return coords
 
 
 def polar2cart(r, phi, theta):
