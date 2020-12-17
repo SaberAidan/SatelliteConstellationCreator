@@ -28,12 +28,12 @@ def draw_walker_plotly(walker_constellation, satellites=True, orbits=True, links
     if satellites:
         d_sat = 0
 
-        for coords in walker_constellation.as_cartesian():
-            sat_coords[d_sat] = coords
-
+        for sats in walker_constellation.satellites:
+            coord = sat_to_xyz(sats)
+            sat_coords[d_sat] = coord
             fig.add_trace(
-                go.Scatter3d(x=[coords[0]], y=[coords[1]], z=[coords[2]], mode='markers', name='real_sat '
-                                                                                               + str(
+                go.Scatter3d(x=[coord[0]], y=[coord[1]], z=[coord[2]], mode='markers', name='real_sat '
+                                                                                            + str(
                     d_sat), showlegend=False))
             d_sat += 1
 
@@ -42,7 +42,6 @@ def draw_walker_plotly(walker_constellation, satellites=True, orbits=True, links
             ctr = 0
             for idz in range(0, sat_coords.shape[0]):
                 if idz != idy:
-
                     temp_coords = np.append([sat_coords[idy, :]], [sat_coords[idz, :]], axis=0)
                     if not sphere_intercept(temp_coords[0], temp_coords[1],
                                             heavenly_body_radius[walker_constellation.focus]):
@@ -145,7 +144,15 @@ def draw_flower_plotly(flower_constellation, satellites=True, orbits=True, links
 
     if satellites:
 
+        for sats in flower_constellation.satellites:
+            coord = sat_to_xyz_2(sats)
+            fig.add_trace(
+                go.Scatter3d(x=[coord[0]], y=[coord[1]], z=[coord[2]], mode='markers', name='real_sat '
+                                                                                            + "flower",
+                             showlegend=False))
+
         flower_constellation.as_cartesian()
+
         if satellites:
             d_sat = 0
 
@@ -233,25 +240,15 @@ def draw_soc_plotly(SOC_Constellation, satellites=True, orbits=True, links=False
             max_dist = np.append(max_dist, math.sqrt(np.sum(coords ** 2)))
 
     if satellites:
-        for idy in range(SOC_Constellation.num_streets):  # Plot satellites
-            for idz in range(SOC_Constellation.sats_per_street):
-                ctr = idz + idy * SOC_Constellation.sats_per_street
-                x_i, y_i, z_i = polar2cart(r, 90 * math.pi / 180,
-                                           (SOC_Constellation.perigee_positions[
-                                                ctr] +
-                                            + SOC_Constellation.ta[ctr]
-                                            ) * math.pi / 180)
-                coords = np.array([x_i, y_i, z_i])
-                coords = rotate(coords, SOC_Constellation.inclination * math.pi / 180, 'x')
-                coords = rotate(coords, (SOC_Constellation.raan[idy]) * math.pi / 180, 'z')
+        d_sat = 0
 
-                spherical_coords = cart2polar(coords[0], coords[1], coords[2])
-
-                sat_coords = np.append(sat_coords, [coords], axis=0)
-                fig.add_trace(
-                    go.Scatter3d(x=[coords[0]], y=[coords[1]], z=[coords[2]], mode='markers', name='satellite '
-                                                                                                   + str(
-                        1 + idz + SOC_Constellation.sats_per_street * idy), showlegend=False))
+        for sats in SOC_Constellation.satellites:
+            coord = sat_to_xyz_2(sats)
+            fig.add_trace(
+                go.Scatter3d(x=[coord[0]], y=[coord[1]], z=[coord[2]], mode='markers', name='real_sat '
+                                                                                            + str(
+                    d_sat), showlegend=False))
+            d_sat += 1
 
     if sensor_regions:
         for idy in range(SOC_Constellation.num_streets):  # Plot sensor regions

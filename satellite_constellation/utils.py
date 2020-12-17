@@ -63,7 +63,6 @@ def mod(x, y):
 
 def proper_round(num, dec=0):  # Add exception check for no decimal point found
 
-
     num = str(num)[:str(num).index('.') + dec + 2]
     if num[-1] >= '5':
         return float(num[:-2 - (not dec)] + str(int(num[-2 - (not dec)]) + 1))
@@ -71,7 +70,6 @@ def proper_round(num, dec=0):  # Add exception check for no decimal point found
 
 
 def rotate_np(vecs, angs, ax='x', rpy=None, basis=None):
-
     """
 
     Rotates a passed array of vectors by the passed array of angles about the passed axis. \n
@@ -222,7 +220,6 @@ def sphere_intercept(P1, P2, R):
 
 
 def sphere_intercept_np(P1, P2, R):
-
     """
 
     Determines if the vectors with start point P1 and endpoints P2 intercept the sphere defined assumed to be at 0,0,0
@@ -257,7 +254,6 @@ def sphere_intercept_np(P1, P2, R):
 
 
 def geographic_distance_np(target_lat, target_lon, lats, lons, radius, radians=False):
-
     """
 
     Determines the geographic distances between a target latitude/longitude and a vector of latitudes/longitudes.
@@ -308,86 +304,143 @@ def geographic_area(lat1, lon1, lat2, lon2, radius, radians=False):
     return area
 
 
+# def sat_to_xyz(satellite):
+#     r = satellite.true_alt
+#
+#     if satellite.eccentricity > 0:
+#
+#         # print('ra',satellite.right_ascension_r)
+#         # print('i',satellite.inclination_r)
+#
+#         a = satellite.semi_major
+#         b = a * math.sqrt(1 - math.pow(satellite.eccentricity, 2))
+#         f = (satellite.altitude + heavenly_body_radius[satellite._focus]) * 10 ** 3
+#         disp = a - f
+#
+#         ang = deg_2_rad(satellite.ta + 180)
+#
+#         x_i, y_i, z_i = disp + a * np.cos(ang), b * np.sin(ang), 0
+#         coords = np.array([x_i, y_i, z_i]) * 10 ** -3
+#         coords = rotate(coords, deg_2_rad(satellite.right_ascension), 'z')
+#         coords = rotate(coords, deg_2_rad(satellite.inclination), 'x')
+#
+#     else:
+#
+#         ax1 = np.array([r, 0, 0])
+#         ax1 = rotate(ax1, satellite.right_ascension_r, 'z')
+#         ax2 = rotate(ax1, math.pi / 2, 'z')
+#         ax2 = rotate(ax2, satellite.inclination_r, 'custom',
+#                      basis=ax1 / math.sqrt(np.sum(ax1 ** 2)))
+#
+#         basis = np.cross(ax1 / math.sqrt(np.sum(ax1 ** 2)), ax2 / math.sqrt(np.sum(ax2 ** 2)))
+#
+#         coords = np.array([r, 0, 0])
+#         coords = rotate(coords, satellite.right_ascension_r, 'z')
+#         coords = rotate(coords, (satellite.perigee_r + satellite.ta_r), 'custom', basis=basis)
+#
+#     return coords
+
+
 def sat_to_xyz(satellite):
     r = satellite.true_alt
+    e = satellite.eccentricity
+    a = satellite.semi_major
+    if a == 0:
+        a = r
+    i = satellite.inclination_r
+    w = satellite.perigee_r
+    Ohm = satellite.right_ascension_r
+    E = math.sqrt(1 - e ** 2) * math.sin(satellite.ta_r) / (1 + e * math.cos(satellite.ta_r))
 
-    if satellite.eccentricity > 0:
 
-        # print('ra',satellite.right_ascension_r)
-        # print('i',satellite.inclination_r)
+    # print('r', r, 'e', e, 'a', a, 'i', i, 'w', w, 'ohm', Ohm, 'E', E)
 
-        a = satellite.semi_major
-        b = a * math.sqrt(1 - math.pow(satellite.eccentricity, 2))
-        f = (satellite.altitude + heavenly_body_radius[satellite._focus]) * 10 ** 3
-        disp = a - f
+    x = a * ((math.cos(E) - e) * (math.cos(w) * math.cos(Ohm) - math.sin(w) * math.sin(Ohm) * math.cos(i)) + math.pow(
+        1 - math.pow(e, 2), 0.5) * math.sin(E) * (
+                     -math.sin(w) * math.cos(Ohm) - math.cos(w) * math.sin(Ohm) * math.cos(i)))
 
-        ang = deg_2_rad(satellite.ta + 180)
+    y = a * ((math.cos(E) - e) * (math.cos(w) * math.sin(Ohm) + math.sin(w) * math.cos(Ohm) * math.cos(i)) + math.pow(
+        1 - math.pow(e, 2), 0.5) * math.sin(E) * (
+                     -math.sin(w) * math.sin(Ohm) + math.cos(w) * math.cos(Ohm) * math.cos(i)))
 
-        x_i, y_i, z_i = disp + a * np.cos(ang), b * np.sin(ang), 0
-        coords = np.array([x_i, y_i, z_i]) * 10 ** -3
-        coords = rotate(coords, deg_2_rad(satellite.right_ascension), 'z')
-        coords = rotate(coords, deg_2_rad(satellite.inclination), 'x')
+    z = a * ((math.cos(E) - e) * (math.sin(w) * math.sin(i)) + math.pow(1 - math.pow(e, 2), 0.5) * math.sin(E) * (
+            math.cos(w) * math.sin(i)))
 
-    else:
-
-        ax1 = np.array([r, 0, 0])
-        ax1 = rotate(ax1, satellite.right_ascension_r, 'z')
-        ax2 = rotate(ax1, math.pi / 2, 'z')
-        ax2 = rotate(ax2, satellite.inclination_r, 'custom',
-                     basis=ax1 / math.sqrt(np.sum(ax1 ** 2)))
-
-        basis = np.cross(ax1 / math.sqrt(np.sum(ax1 ** 2)), ax2 / math.sqrt(np.sum(ax2 ** 2)))
-
-        coords = np.array([r, 0, 0])
-        coords = rotate(coords, satellite.right_ascension_r, 'z')
-        coords = rotate(coords, (satellite.perigee_r + satellite.ta_r), 'custom', basis=basis)
-    #
-    return coords
+    return x, y, z
 
 
 def sat_to_xyz_np(satellites):
+
     r = satellites[:, 1]
-    eccentricity = satellites[:, 2]
-    semi_major = satellites[:, 8]
-
-    right_ascension = satellites[:, 4] * math.pi / 180
-    inclination = satellites[:, 3] * math.pi / 180
+    e = satellites[:, 2]
+    a = satellites[:, 8]
+    a[a == 0] = r[a == 0]
+    Ohm = satellites[:, 4] * math.pi / 180
+    i = satellites[:, 3] * math.pi / 180
     ta = satellites[:, 6] * math.pi / 180
-    perigee = satellites[:, 5] * math.pi / 180
+    w = satellites[:, 5] * math.pi / 180
 
-    if satellites[0, 2] == 0:
-        ax1 = np.column_stack((r, np.zeros(len(r)), np.zeros(len(r))))
-        ax1 = rotate_np(ax1, right_ascension, 'z')
-        ax2 = rotate_np(ax1, np.full(len(ax1), math.pi / 2), 'z')
+    E = np.sqrt(1 - e ** 2) * np.sin(ta) / (1 + e * np.cos(ta))
 
-        basis = np.sqrt(np.sum(np.square(ax1), axis=1))
+    # print('r', r, 'e', e, 'a', a, 'i', i, 'w', w, 'ohm', Ohm, 'E', E)
 
-        ax2 = rotate_np(ax2, inclination, 'custom', basis=ax1 / basis[:, None])
+    x = a * ((np.cos(E) - e) * (np.cos(w) * np.cos(Ohm) - np.sin(w) * np.sin(Ohm) * np.cos(i)) + np.power(
+        1 - np.power(e, 2), 0.5) * np.sin(E) * (
+                     -np.sin(w) * np.cos(Ohm) - np.cos(w) * np.sin(Ohm) * np.cos(i)))
 
-        b1 = np.sqrt(np.sum(np.square(ax1), axis=1))
-        b1 = ax1 / basis[:, None]
-        b2 = np.sqrt(np.sum(np.square(ax2), axis=1))
-        b2 = ax2 / basis[:, None]
+    y = a * ((np.cos(E) - e) * (np.cos(w) * np.sin(Ohm) + np.sin(w) * np.cos(Ohm) * np.cos(i)) + np.power(
+        1 - np.power(e, 2), 0.5) * np.sin(E) * (
+                     -np.sin(w) * np.sin(Ohm) + np.cos(w) * np.cos(Ohm) * np.cos(i)))
 
-        basis = np.cross(b1, b2)
+    z = a * ((np.cos(E) - e) * (np.sin(w) * np.sin(i)) + np.power(1 - np.power(e, 2), 0.5) * np.sin(E) * (
+            np.cos(w) * np.sin(i)))
 
-        coords = np.column_stack((r, np.zeros(len(r)), np.zeros(len(r))))
-        coords = rotate_np(coords, right_ascension, 'z')
-        coords = rotate_np(coords, (perigee + ta), 'custom', basis=basis)
+    return np.column_stack((x, y, z))
 
-    else:
 
-        b = semi_major * np.sqrt(1 - np.power(eccentricity, 2))
-        f = r * 10 ** 3
-        disp = semi_major - f
-
-        ang = ta + math.pi
-
-        coords = np.column_stack((disp + semi_major * np.cos(ang), b * np.sin(ang), np.zeros(len(b)))) * 10 ** -3
-        coords = rotate_np(coords, right_ascension, 'z')
-        coords = rotate_np(coords, inclination, 'x')
-
-    return coords
+# def sat_to_xyz_np(satellites):
+#     r = satellites[:, 1]
+#     eccentricity = satellites[:, 2]
+#     semi_major = satellites[:, 8]
+#
+#     right_ascension = satellites[:, 4] * math.pi / 180
+#     inclination = satellites[:, 3] * math.pi / 180
+#     ta = satellites[:, 6] * math.pi / 180
+#     perigee = satellites[:, 5] * math.pi / 180
+#
+#     if satellites[0, 2] == 0:
+#         ax1 = np.column_stack((r, np.zeros(len(r)), np.zeros(len(r))))
+#         ax1 = rotate_np(ax1, right_ascension, 'z')
+#         ax2 = rotate_np(ax1, np.full(len(ax1), math.pi / 2), 'z')
+#
+#         basis = np.sqrt(np.sum(np.square(ax1), axis=1))
+#
+#         ax2 = rotate_np(ax2, inclination, 'custom', basis=ax1 / basis[:, None])
+#
+#         # b1 = np.sqrt(np.sum(np.square(ax1), axis=1))
+#         b1 = ax1 / basis[:, None]
+#         # b2 = np.sqrt(np.sum(np.square(ax2), axis=1))
+#         b2 = ax2 / basis[:, None]
+#
+#         basis = np.cross(b1, b2)
+#
+#         coords = np.column_stack((r, np.zeros(len(r)), np.zeros(len(r))))
+#         coords = rotate_np(coords, right_ascension, 'z')
+#         coords = rotate_np(coords, (perigee + ta), 'custom', basis=basis)
+#
+#     else:
+#
+#         b = semi_major * np.sqrt(1 - np.power(eccentricity, 2))
+#         f = r * 10 ** 3
+#         disp = semi_major - f
+#
+#         ang = ta + math.pi
+#
+#         coords = np.column_stack((disp + semi_major * np.cos(ang), b * np.sin(ang), np.zeros(len(b)))) * 10 ** -3
+#         coords = rotate_np(coords, right_ascension, 'z')
+#         coords = rotate_np(coords, inclination, 'x')
+#
+#     return coords
 
 
 def polar2cart(r, phi, theta):
@@ -399,7 +452,6 @@ def polar2cart(r, phi, theta):
 
 
 def polar2cart_np(vs):
-
     """
 
     Converts a vector of polar coordinates to a vector of cartesian coordinates
@@ -427,7 +479,6 @@ def cart2polar(x, y, z):
 
 
 def cart2polar_np(vs):
-
     """
 
     Converts a vector of cartesian coordinates to a vector of polar coordinates
@@ -465,7 +516,6 @@ def spherical2geographic(polar, azimuth, radians):
 
 
 def spherical2geographic_np(coordinates, radians):
-
     """
 
     Converts a vector of spherical coordinates to geographic coordinates

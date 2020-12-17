@@ -302,7 +302,7 @@ class orbital_analysis:
 
         :param target_long: Longitude of the target
         :param target_lat: Latitude of the target
-        :param step_res: Angle the satellites true anomaly is incremented by [radians]
+        :param step_res: Angle the satellites true anomaly is incremented by [degrees]
         :param num_iterations: Maximum number of times the orbit is propagated forward
         :param num_samples: Number of complete exits from view to be recorded
 
@@ -435,32 +435,49 @@ class orbital_analysis:
 
         return coverage_radius, theta
 
-    def find_links_np(self, custom_satellites=None):
+    def find_links_np(self, step_res=1, num_iterations=360):
 
         """
 
-          Function to determine how many other satellites in the constellation each satellite can see.\n
-          Needs to be reworked to propagate the orbit forward and calculate the number of links.
+        Function to determine how many other satellites in the constellation each satellite can see.\n
 
-          :param custom_satellites: List of satellites to check
+        :param step_res: Angle the satellites true anomaly is incremented by [degrees]
+        :param num_iterations: Maximum number of times the orbit is propagated forward
 
-          """
+        """
 
-        if custom_satellites is None:
-            sats = np.array(self.constellation.satellites)
-        else:
-            sats = np.array(custom_satellites)
+        d_prop = 1
+        overflow_ctr = 0
+        # step_res = 1
+        # overflow = 360
 
-        sat_coords = self.constellation.as_cartesian_np(sats)
+        num_sats = []
 
-        link_nums = np.zeros(len(sat_coords))
-        d_sat = 0
+        while len(num_sats) < num_iterations:
+            overflow_ctr += 1
 
-        for coords in sat_coords:
-            link_nums[d_sat] = np.sum(sphere_intercept_np(coords, sat_coords, 6371) == False)
-            d_sat += 1
+            d_theta = d_prop * step_res * math.pi / 180
 
-        return np.mean(link_nums)
+            satellites = np.array(self.constellation.propagate_np(d_theta, radians=True))
+
+            sat_coords = self.constellation.as_cartesian_np(satellites)
+
+            link_nums = []
+
+            for coords in sat_coords:
+                link_nums.append(np.sum(sphere_intercept_np(coords, sat_coords, 6371) == False))
+
+            num_sats.append(link_nums)
+
+            d_prop += 1
+
+        res = {
+            "raw": np.array(num_sats),
+            "mean_sat_spec_links": np.mean(np.array(num_sats), axis=0),
+            "mean_constellation_links": np.mean(np.array(num_sats))
+        }
+
+        return res
 
     def calculate_constellation_coverage_np(self, custom_satellites=None, resolution=0.5):
 
@@ -564,7 +581,7 @@ class orbital_analysis:
         :param station_long: Latitude of the target
         :param station_fov: Station field of view
         :param radians: Indicates whether the FOV is passed in radians or not
-        :param step_res: Angle the satellites true anomaly is incremented by [radians]
+        :param step_res: Angle the satellites true anomaly is incremented by [degrees]
         :param num_iterations: Maximum number of times the orbit is propagated forward
         :param num_samples: Number of complete exits from view to be recorded
 
@@ -606,7 +623,6 @@ class orbital_analysis:
 
             if in_view.any():
                 num_sats.append(np.sum(in_view))
-
             if in_view.any() and tracking == False:  # Has just entered FOV
                 tracking = True
                 start_time = self.constellation.orbital_period * d_theta / (2 * math.pi)
