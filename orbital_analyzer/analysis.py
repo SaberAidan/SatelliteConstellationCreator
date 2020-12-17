@@ -233,52 +233,6 @@ class orbital_analysis:
         else:
             return True  # Convert to numpy
 
-    def check_ground_FOV_np(self, satellites, lat, lon, FOV, drift, radians=False):
-
-        if not radians:
-            FOV = deg_2_rad(FOV)
-
-        lon = lon + drift
-
-        if lon > 180:
-            lon = lon - 180
-        elif lon < -180:
-            lon = lon + 360
-
-        lon = (lon + 360) % 360
-
-        if lon > 180:
-            lon -= 360
-
-        spherical = geographic2spherical(lat, lon, heavenly_body_radius[self.constellation.focus])
-        #
-        coords = sat_to_xyz_np(satellites)
-        alt = np.sqrt(np.sum(np.square(coords), axis=1))
-        max_radius = alt * FOV / 2
-
-        cartesian = polar2cart(alt, spherical[0], spherical[1])
-
-        print(cartesian)
-        print(coords)
-
-        distance = np.sqrt(
-            np.power(coords[:, 0] - cartesian[0], 2) + np.power(coords[:, 1] - cartesian[1], 2) + np.power(
-                coords[:, 2] - cartesian[2], 2))
-
-        # print(alt)
-
-        #
-        # cartesian = polar2cart(alt, spherical[0], spherical[1])
-        #
-        # distance = math.sqrt(
-        #     math.pow(coords[0] - cartesian[0], 2) + math.pow(coords[1] - cartesian[1], 2) + math.pow(
-        #         coords[2] - cartesian[2], 2))
-        #
-        # if distance > max_radius:
-        #     return False
-        # else:
-        #     return True  # Convert to numpy
-
     def ground_station_visibility(self, station_lat, station_long, station_fov, radians=False):
 
         d_prop = 1
@@ -292,7 +246,7 @@ class orbital_analysis:
 
         num_sats = []
 
-        while len(gap_times) < overflow:
+        while len(gap_times) < 10:
 
             overflow_ctr += 1
 
@@ -337,7 +291,23 @@ class orbital_analysis:
         return np.mean(num_sats), np.mean(gap_times), np.std(gap_times), np.mean(view_times), np.std(
             view_times)  # Convert to numpy
 
-    def revisit_numpy(self, target_long, target_lat):
+    def revisit_numpy(self, target_long, target_lat, step_res=0.5, num_iterations=10000, num_samples=10):
+
+        """
+
+        Function to numerically determine the revisit time of the satellite constellation, i.e, how long until a
+        position on the orbited bodies surface is in view of a satellite again. \n
+        Works by propagating the orbit forward by incrementing the true anomaly of each satellite and checking if the
+        point is within the view of the satellites beam.
+
+        :param target_long: Longitude of the target
+        :param target_lat: Latitude of the target
+        :param step_res: Angle the satellites true anomaly is incremented by [radians]
+        :param num_iterations: Maximum number of times the orbit is propagated forward
+        :param num_samples: Number of complete exits from view to be recorded
+
+
+        """
 
         d_prop = 1
         tracking = True
@@ -346,11 +316,11 @@ class orbital_analysis:
         gap_times = []
         view_times = []
         overflow_ctr = 0
-        overflow = 10000
+        overflow = num_iterations
 
         num_sats = []
 
-        while len(gap_times) < 10:
+        while len(gap_times) < num_samples:
 
             overflow_ctr += 1
 
@@ -361,7 +331,7 @@ class orbital_analysis:
                     print("Constant coverage")
                     return 0, 0
 
-            d_theta = d_prop * 0.5 * math.pi / 180
+            d_theta = d_prop * step_res * math.pi / 180
 
             seconds = (d_theta / (2 * math.pi)) * self.constellation.orbital_period
 
@@ -371,23 +341,50 @@ class orbital_analysis:
 
             in_view = self.check_sat_FOV_np(satellites, target_lat, target_long, longitudinal_drift)
 
-            if in_view and tracking == False:  # Has just entered FOV
+            if in_view.any():
+                num_sats.append(np.sum(in_view))
+
+            if in_view.any() and tracking == False:  # Has just entered FOV
                 tracking = True
                 start_time = self.constellation.orbital_period * d_theta / (2 * math.pi)
                 gap_times.append(start_time - finish_time)
-
-            if not in_view and tracking == True:  # Has just left FOV
+            elif not in_view.any() and tracking == True:  # Has just left FOV
                 tracking = False
                 finish_time = self.constellation.orbital_period * d_theta / (2 * math.pi)
                 view_times.append(finish_time - start_time)
 
             d_prop += 1
 
-        return np.mean(gap_times), np.std(gap_times), np.mean(view_times), np.std(view_times)
+        res = {
+            "gap_durations": gap_times,
+            "mean_gap": np.mean(gap_times),
+            "std_gap": np.std(gap_times),
+            "cover_durations": view_times,
+            "mean_cover": np.mean(view_times),
+            "std_cover": np.std(view_times),
+            "gap_cover_ratio": np.mean(gap_times) / np.mean(view_times),
+            "sats_in_view": num_sats,
+            "mean_sats_in_view": np.mean(num_sats),
+            "std_sats_in_view": np.std(num_sats)
+        }
 
-    def check_sat_FOV_np(self, satellites, target_lat, target_lon, drift, threshold=0):  # Convert to numpy
+        return res
 
-        in_view = False
+    def check_sat_FOV_np(self, satellites, target_lat, target_lon, drift, threshold=0):
+
+        """
+
+        Function to determine if a position on the orbited bodies surface is within view of any of the passed satellites.\n
+        Works by determining the centre of the satellites beam on the earths surface and calculating the geodesic
+        distance to the point of interest and determining if it is within the satellites beam.
+
+        :param satellites: List of satellites :param target_lon: Longitude of the target
+        :param target_lat: Latitude of the target
+        :param target_lon: Longitude of the target
+        :param drift: How far the earth has rotated relative to its initial rotation in the satellite frame
+        :param threshold: Allowable distance from beam centre to point of interest. If set to 0, this will be determined by the beam width, altitude of the satellite and radius of the heavenly body.
+
+        """
 
         coords = self.constellation.as_geographic_np(satellites)
 
@@ -400,14 +397,21 @@ class orbital_analysis:
         dist = geographic_distance_np(target_lat, target_lon, coords[:, 0], coords[:, 1],
                                       heavenly_body_radius[self.constellation.focus], radians=True)
 
-        threshold = self.calculate_satellite_coverage_np(self.constellation.as_numpy(satellites))[0]
+        if threshold == 0:
+            threshold = self.calculate_satellite_coverage_np(self.constellation.as_numpy(satellites))[0]
 
-        if (dist < threshold).any():
-            in_view = True
+        in_view = dist < threshold
 
         return in_view
 
     def calculate_satellite_coverage_np(self, satellites):
+
+        """
+
+        Function to determine the individual coverage of a list of satellites on the surface of the orbited body.\n
+
+        :param satellites: List of satellites to get coverage for
+        """
 
         coords = sat_to_xyz_np(satellites)
         r = np.sqrt(np.sum(np.square(coords), axis=1))
@@ -433,6 +437,15 @@ class orbital_analysis:
 
     def find_links_np(self, custom_satellites=None):
 
+        """
+
+          Function to determine how many other satellites in the constellation each satellite can see.\n
+          Needs to be reworked to propagate the orbit forward and calculate the number of links.
+
+          :param custom_satellites: List of satellites to check
+
+          """
+
         if custom_satellites is None:
             sats = np.array(self.constellation.satellites)
         else:
@@ -450,7 +463,19 @@ class orbital_analysis:
         return np.mean(link_nums)
 
     def calculate_constellation_coverage_np(self, custom_satellites=None, resolution=0.5):
-        d_lat = -90
+
+        """
+
+          Function to determine how much surface area of the orbited body is covered by the constellation.\n
+          Works by splitting the surface of the earth into latitude/longitude blocks and determining if any of the
+          satellites beams cover the centre of the block. The area of every covered block is then combined. \n
+          Needs to be reworked to propagate the orbit and get the average coverage.
+
+          :param custom_satellites: List of satellites to use in coverage calculation
+          :param resolution:
+
+          """
+
         area = 0
         coords = self.constellation.as_geographic()
 
@@ -476,3 +501,133 @@ class orbital_analysis:
         # print(threshold[0])
 
         return area  # Convert to numpy
+
+    def check_ground_FOV_np(self, satellites, lat, lon, FOV, drift, radians=False):
+
+        """
+
+        Function to determine if any of the passed satellites are in view of a given ground station.\n
+        Works by projecting the beam of the ground station onto a celestial sphere matching the altitude of each
+        satellite. The geodesic distance from the centre of this projected circle to the position of the satellite is
+        then calculated and checked against the radius of the circle to determine if it is in view. \n
+        Needs to be reworked to take into account both the beam of ground station and satellite?
+
+        :param satellites: List of satellites :param target_lon: Longitude of the target
+        :param lat: Latitude of the ground station
+        :param lon: Longitude of the ground station
+        :param drift: How far the earth has rotated relative to its initial rotation in the satellite frame
+        :param FOV: Field of view of the ground station
+        :param radians: Indicates whether the FOV is passed in radians or not
+
+        """
+
+        if not radians:
+            FOV = deg_2_rad(FOV)
+
+        lon = lon + drift
+
+        if lon > 180:
+            lon = lon - 180
+        elif lon < -180:
+            lon = lon + 360
+
+        lon = (lon + 360) % 360
+
+        if lon > 180:
+            lon -= 360
+
+        spherical = geographic2spherical(lat, lon, heavenly_body_radius[self.constellation.focus])
+
+        coords = sat_to_xyz_np(satellites)
+        alt = np.sqrt(np.sum(np.square(coords), axis=1))
+        max_radius = alt * FOV / 2
+
+        cartesian = polar2cart(alt, spherical[0], spherical[1])
+
+        distance = np.sqrt(
+            np.power(coords[:, 0] - cartesian[0], 2) + np.power(coords[:, 1] - cartesian[1], 2) + np.power(
+                coords[:, 2] - cartesian[2], 2))
+
+        return distance < max_radius
+
+    def ground_station_visibility_np(self, station_lat, station_long, station_fov, radians=False, step_res=0.5,
+                                     num_iterations=10000, num_samples=10):
+
+        """
+
+        Function to numerically determine the revisit time of the satellite constellation, i.e, how long until a
+        position on the orbited bodies surface is in view of a satellite again. \n
+        Works by propagating the orbit forward by incrementing the true anomaly of each satellite and checking if the
+        point is within the view of the satellites beam.
+
+        :param station_lat: Longitude of the target
+        :param station_long: Latitude of the target
+        :param station_fov: Station field of view
+        :param radians: Indicates whether the FOV is passed in radians or not
+        :param step_res: Angle the satellites true anomaly is incremented by [radians]
+        :param num_iterations: Maximum number of times the orbit is propagated forward
+        :param num_samples: Number of complete exits from view to be recorded
+
+
+        """
+
+        d_prop = 1
+        tracking = True
+        start_time = -1
+        finish_time = -1
+        gap_times = []
+        view_times = []
+        overflow_ctr = 0
+        overflow = num_iterations
+
+        num_sats = []
+
+        while len(gap_times) < num_samples:
+
+            overflow_ctr += 1
+
+            if overflow_ctr > overflow:
+                if len(gap_times) > 0:
+                    break
+                    # return np.mean(gap_times), np.std(gap_times)
+                else:
+                    print("Constant coverage")
+                    return 0, 0
+
+            d_theta = d_prop * step_res * math.pi / 180
+
+            seconds = (d_theta / (2 * math.pi)) * self.constellation.orbital_period
+            longitudinal_drift = seconds * constants["wE"] * 180 / math.pi
+
+            satellites = self.constellation.as_numpy(self.constellation.propagate_np(d_theta, radians=True))
+
+            in_view = self.check_ground_FOV_np(satellites, station_lat, station_long, station_fov, longitudinal_drift,
+                                               radians)
+
+            if in_view.any():
+                num_sats.append(np.sum(in_view))
+
+            if in_view.any() and tracking == False:  # Has just entered FOV
+                tracking = True
+                start_time = self.constellation.orbital_period * d_theta / (2 * math.pi)
+                gap_times.append(start_time - finish_time)
+            elif not in_view.any() and tracking == True:  # Has just left FOV
+                tracking = False
+                finish_time = self.constellation.orbital_period * d_theta / (2 * math.pi)
+                view_times.append(finish_time - start_time)
+
+            d_prop += 1
+
+        res = {
+            "gap_durations": gap_times,
+            "mean_gap": np.mean(gap_times),
+            "std_gap": np.std(gap_times),
+            "cover_durations": view_times,
+            "mean_cover": np.mean(view_times),
+            "std_cover": np.std(view_times),
+            "gap_cover_ratio": np.mean(gap_times) / np.mean(view_times),
+            "sats_in_view": num_sats,
+            "mean_sats_in_view": np.mean(num_sats),
+            "std_sats_in_view": np.std(num_sats)
+        }
+        return res

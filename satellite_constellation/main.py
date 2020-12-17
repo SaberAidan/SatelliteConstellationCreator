@@ -6,34 +6,27 @@ import time
 import json
 
 if __name__ == '__main__':
-    myWalker = WalkerConstellation(4, 2, 1, 45, 35785, 0, 5)
-    visualiser.draw_walker_plotly(myWalker, sensor_regions=True)
+    myWalker = WalkerConstellation(40, 2, 1, 45, 35785, 0, 5)
+    # visualiser.draw_walker_plotly(myWalker, sensor_regions=True)
 
     myAnalyzer = orbital_analysis(myWalker)
 
-    # start = time.process_time()
-    # myAnalyzer.find_links_np()
-    # print(myAnalyzer.calculate_constellation_coverage_np(resolution=1))
-    # print(myAnalyzer.ground_station_visibility(0,0,5))
-    # print("NP revisit calc time", time.process_time() - start, 's')
-
-    myAnalyzer.check_ground_FOV_np(myAnalyzer.constellation.as_numpy(), 0, 0, 20,0)
-
-    # myStreets = SOCConstellation(6, 5, 38758, 5, [0, 30, 60, 90, 120, 150], 0, 1)
-    # visualiser.draw_soc_plotly(myStreets, sensor_regions=True)
-    #
-    # myAnalyzer = orbital_analysis(myStreets)
-    #
-    # start = time.process_time()
-    # # myAnalyzer.find_links_np()
-    # print(myAnalyzer.calculate_constellation_coverage_np(resolution=1))
-    # print("NP revisit calc time", time.process_time() - start, 's')
+    start = time.process_time()
+    res = myAnalyzer.ground_station_visibility_np(0, 0, 20)
+    for key in res:
+        print(key, ':', res[key])
+    print("NP station revisit calc time", time.process_time() - start, 's \n')
 
     # start = time.process_time()
-    # # myAnalyzer.find_links_np()
-    # print(myAnalyzer.calculate_constellation_coverage(resolution=1))
-    # print("Normal revisit calc time", time.process_time() - start, 's')
+    # print(myAnalyzer.ground_station_visibility(0, 0, 20))
+    # print("Normal station revisit calc time", time.process_time() - start, 's')
+
+    start = time.process_time()
+    res = myAnalyzer.revisit_numpy(0, 0)
+    for key in res:
+        print(key, ':', res[key])
+    print("NP revisit calc time", time.process_time() - start, 's \n')
 
     # start = time.process_time()
-    # myAnalyzer.find_links()
+    # print(myAnalyzer.calculate_revisit(0, 0))
     # print("Normal revisit calc time", time.process_time() - start, 's')

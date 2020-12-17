@@ -63,6 +63,7 @@ def mod(x, y):
 
 def proper_round(num, dec=0):  # Add exception check for no decimal point found
 
+
     num = str(num)[:str(num).index('.') + dec + 2]
     if num[-1] >= '5':
         return float(num[:-2 - (not dec)] + str(int(num[-2 - (not dec)]) + 1))
@@ -70,6 +71,23 @@ def proper_round(num, dec=0):  # Add exception check for no decimal point found
 
 
 def rotate_np(vecs, angs, ax='x', rpy=None, basis=None):
+
+    """
+
+    Rotates a passed array of vectors by the passed array of angles about the passed axis. \n
+    If the passed axis is 'x', 'y' or 'z', the vectors will be rotated about that axis. \n
+    If the passed axis is 'c', the vectors will be rotated by the passed roll/pitch/yaw. \n
+    If the passed axis is 'custom', the vectors will be rotated by passed array of angles about the axis specified by
+    basis.
+
+    :param vecs: The array of vectors to be rotated
+    :param angs: The array of angle to rotate the corresponding vectors by. Not used if axis 'c'. [radians]
+    :param ax: The axis which the vectors are to be rotated about, defaults to 'x'.
+    :param rpy: The roll/pitch/yaw to rotate the vector by. [radians]
+    :param basis: The unit vector defining the axis which the vectors are rotated about if ax = 'custom'.
+
+    """
+
     if ax == 'x':
         rotation = np.array([[np.ones(len(angs)), np.zeros(len(angs)), np.zeros(len(angs))],
                              [np.zeros(len(angs)), np.cos(angs), -1 * np.sin(angs)],
@@ -204,6 +222,20 @@ def sphere_intercept(P1, P2, R):
 
 
 def sphere_intercept_np(P1, P2, R):
+
+    """
+
+    Determines if the vectors with start point P1 and endpoints P2 intercept the sphere defined assumed to be at 0,0,0
+    with radius R. \n
+    Returns an array of true/false. True if intercept and false otherwise. \n
+    Needs to be reworked to allow an array of vectors in P1 and check all combinations of P1 -> P2.
+
+    :param P1: Vector defining the start point of each line
+    :param P2: Vector defining the end points of the lines.
+    :param R: Radius of the sphere
+
+    """
+
     x1 = P1[0]
     x2 = P2[:, 0]
     y1 = P1[1]
@@ -220,17 +252,25 @@ def sphere_intercept_np(P1, P2, R):
     results = np.full((len(P2)), True, dtype=bool)
     results[determinant < 0] = False
     results[determinant >= 0] = True
-    #
+
     return results
-    # if determinant < 0:
-    #     return False
-    # elif determinant == 0:
-    #     return True
-    # else:
-    #     return True
 
 
 def geographic_distance_np(target_lat, target_lon, lats, lons, radius, radians=False):
+
+    """
+
+    Determines the geographic distances between a target latitude/longitude and a vector of latitudes/longitudes.
+
+    :param target_lat: Latitude of target
+    :param target_lon: Longitude of target
+    :param lats: Array of latitude of positions to find distance from
+    :param lons: Array of longitude of positions to find distance from
+    :param radius: Radius of the sphere on which the lat/long positions are based
+    :param radians: Indicates whether or not the passed latitudes/longitudes are in radians or not
+
+    """
+
     if not radians:
         target_lat = target_lat * math.pi / 180
         lats = lats * math.pi / 180
@@ -359,6 +399,15 @@ def polar2cart(r, phi, theta):
 
 
 def polar2cart_np(vs):
+
+    """
+
+    Converts a vector of polar coordinates to a vector of cartesian coordinates
+
+    :param vs: The vectors of polar coordinates to be converted to cartesian coordinates
+
+    """
+
     r = vs[:, 0]
     phi = vs[:, 1]
     theta = vs[:, 2]
@@ -378,6 +427,15 @@ def cart2polar(x, y, z):
 
 
 def cart2polar_np(vs):
+
+    """
+
+    Converts a vector of cartesian coordinates to a vector of polar coordinates
+
+    :param vs: The vectors of cartesian coordinates to be converted to polar coordinates
+
+    """
+
     r = np.sqrt(np.sum(vs ** 2, axis=1))
     azimuth = np.arctan2(vs[:, 1], vs[:, 0])
     inclination = np.arccos(vs[:, 2] / r)
@@ -407,6 +465,16 @@ def spherical2geographic(polar, azimuth, radians):
 
 
 def spherical2geographic_np(coordinates, radians):
+
+    """
+
+    Converts a vector of spherical coordinates to geographic coordinates
+
+    :param coordinates: The vectors of spherical coordinates to be converted to geographic coordinates
+    :param radians: Indicates whether the passed coordinates are in degrees or not
+
+    """
+
     if radians:
         coordinates = coordinates * 180 / math.pi
 
@@ -414,9 +482,6 @@ def spherical2geographic_np(coordinates, radians):
 
     coordinates[:, 1][coordinates[:, 1] > 180] -= 360
     coordinates[:, 0][coordinates[:, 0] > 180] = 360 - coordinates[:, 0][coordinates[:, 0] > 180]
-
-    # latitude = 90 - coordinates[:, 0]
-    # longitude = coordinates[:, 1]
 
     return np.column_stack((90 - coordinates[:, 0], coordinates[:, 1]))
 

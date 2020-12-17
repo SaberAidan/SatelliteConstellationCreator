@@ -26,7 +26,7 @@ def from_numpy(satellites):
 
 class Constellation:
     """
-    Class to implement a layer of abstraction for satellite constellations
+    Class to implement general constellation features and behaviour
     Contains parameters general to all types of satellites
 
     :param num_satellites: Number of satellites used in the constellation
@@ -76,6 +76,15 @@ class Constellation:
 
     def propagate_np(self, angle, radians):
 
+        """
+
+        Function to propagate the orbit of constellations satellites forward by the given angle\n
+
+        :param angle: Angle the satellites true anomaly is incremented by
+        :param radians: Indicates whether the passed angle is in radians or not
+
+        """
+
         if not radians:
             angle_r = deg_2_rad(angle)
             angle_d = angle
@@ -111,6 +120,14 @@ class Constellation:
 
     def as_numpy(self, custom_satellites=None):
 
+        """
+
+        Returns the passed satellites as a numpy array
+
+        :param custom_satellites: The satellites to be converted to a numpy array. If left blank, defaults to this constellations satellites
+
+        """
+
         if custom_satellites is None:
             sats = np.array(self.satellites)
         else:
@@ -122,8 +139,13 @@ class Constellation:
 
     def as_pigi_output(self):
 
+        """
+
+        Returns the satellites in the JSON format read by PIGI
+
+        """
+
         sat_list = []
-        json_string = ""
         for satellite in self.satellites:
             sat_list.append(satellite.as_PIGI())
 
@@ -134,6 +156,14 @@ class Constellation:
         return file_name, sat_json
 
     def as_cartesian_np(self, custom_satellites=None):
+
+        """
+
+        Returns the cartesian coordinates of the passed satellites in km
+
+        :param custom_satellites: The satellites to get the coordinates of. If left blank, defaults to this constellations satellites
+
+        """
 
         if custom_satellites is not None:
             satellites = custom_satellites
@@ -177,7 +207,15 @@ class Constellation:
 
         return spherical_coordinates
 
-    def as_spherical_np(self, custom_satellites=None):  # Convert to numpy
+    def as_spherical_np(self, custom_satellites=None):
+
+        """
+
+        Returns the spherical coordinates of the passed satellites in radians
+
+        :param custom_satellites: The satellites to get the coordinates of. If left blank, defaults to this constellations satellites
+
+        """
 
         if custom_satellites is not None:
             satellites = custom_satellites
@@ -191,6 +229,7 @@ class Constellation:
         return spherical_coordinates
 
     def as_geographic(self, custom_satellites=None):  # Convert to numpy
+
 
         satellites = []
         if custom_satellites is not None:
@@ -209,16 +248,23 @@ class Constellation:
 
         return geographic_coordinates
 
-    def as_geographic_np(self, custom_satellites=None):  # Convert to numpy
+    def as_geographic_np(self, custom_satellites=None):
+
+        """
+
+        Returns the geographic coordinates of the passed satellites. \n
+        Needs to be reworked to account for rotation of earth relative to satellite frame
+
+        :param custom_satellites: The satellites to get the coordinates of If left blank, defaults to this constellations satellites
+
+        """
 
         if custom_satellites is not None:
             satellites = custom_satellites
         else:
             satellites = self.satellites
 
-        # start_2 = time.process_time()
         spherical_coordinates = self.as_spherical_np(satellites)
-        # print("Spherical calc time", time.process_time() - start_2, 's')
         geographic_coordinates = spherical2geographic_np(spherical_coordinates[:, [1, 2]], radians=True)
 
         return geographic_coordinates
