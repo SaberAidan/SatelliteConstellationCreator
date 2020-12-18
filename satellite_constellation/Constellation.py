@@ -11,7 +11,6 @@ import copy
 
 
 def from_numpy(satellites):
-
     sats = []
     # start = time.process_time()
 
@@ -230,7 +229,6 @@ class Constellation:
 
     def as_geographic(self, custom_satellites=None):  # Convert to numpy
 
-
         satellites = []
         if custom_satellites is not None:
             satellites = custom_satellites
@@ -336,16 +334,18 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
         return ta
 
     def __calculate_simple_coverage(self):
+
         half_width = deg_2_rad(self.beam_width / 2)
-        # half_width = (self.beam_width / 2) * math.pi / 180
-        max_width = math.atan(heavenly_body_radius[self.focus] / (self.altitude + heavenly_body_radius[self.focus]))
+        r = self.altitude + heavenly_body_radius[self.focus]
+        max_width = math.asin(heavenly_body_radius[self.focus]/r)
         if half_width > max_width:
             half_width = max_width
-        x = self.altitude * math.tan(half_width)
-        theta = math.asin(x / heavenly_body_radius[self.focus])
+
+        theta = math.asin(math.sin(half_width) / (heavenly_body_radius[self.focus]/r)) - half_width
         r = heavenly_body_radius[self.focus] * theta
         area = math.pi * math.pow(r, 2)
         total_area = area * self.num_satellites
+
         return r, theta, total_area
 
     def __build_satellites(self):  # Convert to numpy
@@ -421,14 +421,28 @@ class SOCConstellation(Constellation):  # This is really just a part of a walker
         self.satellites = self.__build_satellites()
 
     def __calculate_earth_coverage(self):
+
         half_width = deg_2_rad(self.beam_width / 2)
-        max_width = math.atan(heavenly_body_radius[self.focus] / (self.altitude + heavenly_body_radius[self.focus]))
+        r = self.altitude + heavenly_body_radius[self.focus]
+        max_width = math.asin(heavenly_body_radius[self.focus]/r)
         if half_width > max_width:
             half_width = max_width
-        x = self.altitude * math.tan(half_width)
-        theta = math.asin(x / heavenly_body_radius[self.focus])
+
+        theta = math.asin(math.sin(half_width) / (heavenly_body_radius[self.focus]/r)) - half_width
         r = heavenly_body_radius[self.focus] * theta
+        area = math.pi * math.pow(r, 2)
+        total_area = area * self.num_satellites
+
         return r, theta
+
+        # half_width = deg_2_rad(self.beam_width / 2)
+        # max_width = math.atan(heavenly_body_radius[self.focus] / (self.altitude + heavenly_body_radius[self.focus]))
+        # if half_width > max_width:
+        #     half_width = max_width
+        # x = self.altitude * math.tan(half_width)
+        # theta = math.asin(x / heavenly_body_radius[self.focus])
+        # r = heavenly_body_radius[self.focus] * theta
+        # return r, theta
 
     def __calculate_spacing(self):
         street_width = heavenly_body_radius[self.focus] * deg_2_rad(self.street_width)

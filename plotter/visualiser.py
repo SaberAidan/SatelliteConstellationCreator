@@ -250,6 +250,7 @@ def draw_soc_plotly(SOC_Constellation, satellites=True, orbits=True, links=False
 
         for sats in SOC_Constellation.satellites:
             coord = sat_to_xyz(sats)
+            sat_coords = np.append(sat_coords,[coord],axis= 0)
             fig.add_trace(
                 go.Scatter3d(x=[coord[0]], y=[coord[1]], z=[coord[2]], mode='markers', name='real_sat '
                                                                                             + str(
@@ -294,17 +295,18 @@ def draw_soc_plotly(SOC_Constellation, satellites=True, orbits=True, links=False
             z[idz] = coords[2]
         fig.add_trace(go.Scatter3d(x=x, y=y, z=z, mode='lines', name='Street', line=dict(color='green', width=5)))
 
-    if satellites and links:  # Draw line of sight between satellites
-        for idy in range(1, sat_coords.shape[0]):
+    if satellites and links:  # Draw line of sight between satellites        print(sat_coords)
+        for idy in range(0, sat_coords.shape[0]):
             for idz in range(1, sat_coords.shape[0]):
                 if idz != idy:
                     temp_coords = np.append([sat_coords[idy, :]], [sat_coords[idz, :]], axis=0)
+                    print(temp_coords)
                     if not sphere_intercept(temp_coords[0], temp_coords[1],
                                             heavenly_body_radius[SOC_Constellation.focus]):
                         fig.add_trace(
                             go.Scatter3d(x=temp_coords[:, 0], y=temp_coords[:, 1], z=temp_coords[:, 2], mode='lines',
                                          name='link {0} to {1}'.format(idy, idz), showlegend=False,
-                                         line=dict(color='green', width=0.5, dash='dash')))
+                                         line=dict(color='green', width=1.5, dash='dash')))
 
     r = heavenly_body_radius[SOC_Constellation.focus]
 
