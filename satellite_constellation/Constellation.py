@@ -335,6 +335,12 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
 
     def __calculate_simple_coverage(self):
 
+        """
+
+        Function to calculate the coverage radius and angle of satellite on the orbited bodies surface
+
+        """
+
         half_width = deg_2_rad(self.beam_width / 2)
         r = self.altitude + heavenly_body_radius[self.focus]
         max_width = math.asin(heavenly_body_radius[self.focus]/r)
@@ -348,7 +354,14 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
 
         return r, theta, total_area
 
-    def __build_satellites(self):  # Convert to numpy
+    def __build_satellites(self):
+
+        """
+
+        Creates a list of satellite objects based on the orbital parameters determined on initialisation
+
+        """
+
         satellites = []
         for i in range(self.num_satellites):
             sat_num = i + self.start_num + 1
@@ -359,6 +372,13 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
         return satellites
 
     def __calculate_orbit_params(self):
+
+        """
+
+        Determines the perigee altitude, semi major axis and orbital period of the orbits
+
+        """
+
         perigee = heavenly_body_radius[self.focus] + self.altitude  # [km]
         semi_major = perigee / (1 - self.eccentricity)  # [km]
         orbital_period = 2 * math.pi * math.sqrt(
@@ -366,6 +386,14 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
         return orbital_period
 
     def __calculate_minimum_revisit(self):  # Lower bound on the revisit time
+
+        """
+
+        Calculates a rough estimate of the minimum possible revisit time for the constellation. Does not account for
+        beam width.
+
+        """
+
         return heavenly_body_period[self.focus] * 24 * 60 * 60 / self.num_planes
 
     def __repr__(self):
@@ -422,6 +450,12 @@ class SOCConstellation(Constellation):  # This is really just a part of a walker
 
     def __calculate_earth_coverage(self):
 
+        """
+
+        Determines the coverage radius and angle of a satellite on the surface of the orbited body
+
+        """
+
         half_width = deg_2_rad(self.beam_width / 2)
         r = self.altitude + heavenly_body_radius[self.focus]
         max_width = math.asin(heavenly_body_radius[self.focus]/r)
@@ -430,21 +464,17 @@ class SOCConstellation(Constellation):  # This is really just a part of a walker
 
         theta = math.asin(math.sin(half_width) / (heavenly_body_radius[self.focus]/r)) - half_width
         r = heavenly_body_radius[self.focus] * theta
-        area = math.pi * math.pow(r, 2)
-        total_area = area * self.num_satellites
 
         return r, theta
 
-        # half_width = deg_2_rad(self.beam_width / 2)
-        # max_width = math.atan(heavenly_body_radius[self.focus] / (self.altitude + heavenly_body_radius[self.focus]))
-        # if half_width > max_width:
-        #     half_width = max_width
-        # x = self.altitude * math.tan(half_width)
-        # theta = math.asin(x / heavenly_body_radius[self.focus])
-        # r = heavenly_body_radius[self.focus] * theta
-        # return r, theta
-
     def __calculate_spacing(self):
+
+        """
+
+        Determines the spacing of satellites in the orbit to create a street of coverage of given width
+
+        """
+
         street_width = heavenly_body_radius[self.focus] * deg_2_rad(self.street_width)
         if street_width > self.earth_coverage_radius:
             print("Street width larger than maximum width of coverage")
@@ -456,6 +486,13 @@ class SOCConstellation(Constellation):  # This is really just a part of a walker
         return y, ang_spacing
 
     def __calculate_orbit_params(self):
+
+        """
+
+        Determines the perigee altitude, semi major axis and orbital period of the orbits
+
+        """
+
         perigee = heavenly_body_radius[self.focus] + self.altitude  # [km]
         semi_major = perigee / (1 - self.eccentricity)  # [km]
         orbital_period = 2 * math.pi * math.sqrt(
@@ -463,6 +500,13 @@ class SOCConstellation(Constellation):  # This is really just a part of a walker
         return perigee, semi_major, orbital_period
 
     def __calculate_required_satellites(self):
+
+        """
+
+        Determines the number of satellites required to cover a street of given width.
+
+        """
+
         num_satellites_a = self.orbital_period / self.revisit_time  # Calculated from revisit time
         num_satellites_b = 2 * math.pi / self.angular_spacing  # Total coverage
 
@@ -505,6 +549,13 @@ class SOCConstellation(Constellation):  # This is really just a part of a walker
         return all_perigees
 
     def __build_satellites(self):  # Convert to numpy
+
+        """
+
+        Creates a list of satellite objects based on the orbital parameters determined on initialisation
+
+        """
+
         satellites = []
         for i in range(self.num_streets):
             for j in range(self.sats_per_street):
@@ -565,15 +616,36 @@ class FlowerConstellation(Constellation):
         self.satellites = self.__build_satellites()
 
     def __calculate_max_satellites(self):
+
+        """
+
+        Calculates the maximum number of satellites for the constellation
+
+        """
+
         max_sats = self.phasing_d * self.num_days
         if max_sats < self.num_satellites:
             self.num_satellites = max_sats
         return self.num_days, max_sats
 
     def __calculate_num_orbits(self):
+
+        """
+
+        Calculates the number of orbits for the constellation
+
+        """
+
         return self.phasing_d
 
     def __calculate_spacing(self):
+
+        """
+
+        Calculates the spacing between satellites
+
+        """
+
         raan_spacing = -360 * self.phasing_n / self.phasing_d
         mean_anomaly_spacing = -1 * raan_spacing * self.num_petals / self.num_days
         if abs(mean_anomaly_spacing) > 360:
@@ -584,6 +656,13 @@ class FlowerConstellation(Constellation):
         return raan_spacing, mean_anomaly_spacing
 
     def __calculate_orbits(self):
+
+        """
+
+        Generates the right ascension and mean anomaly for each satellite in the constellation
+
+        """
+
         raan = [0]
         M = [0]
         v = [0]
@@ -603,6 +682,13 @@ class FlowerConstellation(Constellation):
         return raan, M, v
 
     def __calculate_orbit_params(self):
+
+        """
+
+        Determines the perigee altitude, semi major axis and orbital period of the orbits
+
+        """
+
         M = heavenly_body_mass[self.focus]
         G = constants["G"]
         wE = constants["wE"]
@@ -613,14 +699,35 @@ class FlowerConstellation(Constellation):
         return T, e, a
 
     def __calculate_revisit_time(self):
+
+        """
+
+        Determines time for satellite to revisit
+
+        """
+
         revisit_time = self.num_days / self.num_satellites
         return revisit_time
 
     def __calculate_minimum_revisit_time(self):
+
+        """
+
+        Determines time for satellite to revisit given the maximum number of satellites
+
+        """
+
         min_revisit_time = self.num_days / self.max_sats
         return min_revisit_time
 
     def __build_satellites(self):  # Convert to numpy
+
+        """
+
+        Creates a list of satellite objects based on the orbital parameters determined on initialisation
+
+        """
+
         satellites = []
         for i in range(self.num_satellites):
             sat_name = i
