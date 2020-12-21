@@ -343,11 +343,11 @@ class WalkerConstellation(Constellation):  # Walker delta pattern, needs a limit
 
         half_width = deg_2_rad(self.beam_width / 2)
         r = self.altitude + heavenly_body_radius[self.focus]
-        max_width = math.asin(heavenly_body_radius[self.focus]/r)
+        max_width = math.asin(heavenly_body_radius[self.focus] / r)
         if half_width > max_width:
             half_width = max_width
 
-        theta = math.asin(math.sin(half_width) / (heavenly_body_radius[self.focus]/r)) - half_width
+        theta = math.asin(math.sin(half_width) / (heavenly_body_radius[self.focus] / r)) - half_width
         r = heavenly_body_radius[self.focus] * theta
         area = math.pi * math.pow(r, 2)
         total_area = area * self.num_satellites
@@ -458,11 +458,11 @@ class SOCConstellation(Constellation):  # This is really just a part of a walker
 
         half_width = deg_2_rad(self.beam_width / 2)
         r = self.altitude + heavenly_body_radius[self.focus]
-        max_width = math.asin(heavenly_body_radius[self.focus]/r)
+        max_width = math.asin(heavenly_body_radius[self.focus] / r)
         if half_width > max_width:
             half_width = max_width
 
-        theta = math.asin(math.sin(half_width) / (heavenly_body_radius[self.focus]/r)) - half_width
+        theta = math.asin(math.sin(half_width) / (heavenly_body_radius[self.focus] / r)) - half_width
         r = heavenly_body_radius[self.focus] * theta
 
         return r, theta
@@ -692,9 +692,10 @@ class FlowerConstellation(Constellation):
         M = heavenly_body_mass[self.focus]
         G = constants["G"]
         wE = constants["wE"]
-        T = (2 * math.pi / wE) * (self.num_days / self.num_petals)
-        a = math.pow(G * M * math.pow(T / (2 * math.pi), 2), 1 / 3)
-        e = 1 - (heavenly_body_radius[self.focus] * 10 ** 3 + self.altitude) / a
+        T = (2 * math.pi / wE) * (self.num_days / self.num_petals)  # [s]
+        mu = G*M  # [m^3][s^-2]
+        a = math.pow(mu * math.pow(T / (2 * math.pi), 2), 1 / 3)  * 10**-3 # [km]
+        e = 1 - (heavenly_body_radius[self.focus] + self.altitude) / a
 
         return T, e, a
 

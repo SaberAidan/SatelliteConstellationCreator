@@ -126,7 +126,7 @@ def draw_flower_plotly(flower_constellation, satellites=True, orbits=True, links
 
     a = flower_constellation.semi_major
     b = a * math.sqrt(1 - math.pow(flower_constellation.eccentricity, 2))
-    f = (flower_constellation.altitude + heavenly_body_radius[flower_constellation.focus]) * 10 ** 3
+    f = (flower_constellation.altitude + heavenly_body_radius[flower_constellation.focus])
     disp = a - f
 
     t = np.linspace(0, 2 * math.pi, 100)
@@ -138,7 +138,7 @@ def draw_flower_plotly(flower_constellation, satellites=True, orbits=True, links
                 min(flower_constellation.num_orbits, flower_constellation.num_satellites)):  # Plot orbital planes
             x, y, z = disp + a * np.cos(t), b * np.sin(t), 0 * t
             for idz in range(100):
-                coords = np.array([x[idz], y[idz], z[idz]]) * 10 ** -3
+                coords = np.array([x[idz], y[idz], z[idz]])
                 coords = rotate(coords, flower_constellation.raan[idy] * math.pi / 180, 'z')
                 coords = rotate(coords, flower_constellation.inclination * math.pi / 180, 'x')
                 x[idz] = coords[0]
@@ -149,16 +149,16 @@ def draw_flower_plotly(flower_constellation, satellites=True, orbits=True, links
             max_dist = np.append(math.sqrt(np.sum(coords ** 2)), np.max(y))
 
     if satellites:
-
+        d_sat = 0
         for sats in flower_constellation.satellites:
             coord = sat_to_xyz(sats)
             fig.add_trace(
                 go.Scatter3d(x=[coord[0]], y=[coord[1]], z=[coord[2]], mode='markers', name='real_sat '
-                                                                                            + "flower",
+                                                                                            + str(d_sat),
                              showlegend=False))
+            d_sat += 1
 
-        flower_constellation.as_cartesian()
-
+        # flower_constellation.as_cartesian()
         if satellites:
             d_sat = 0
 
@@ -300,7 +300,6 @@ def draw_soc_plotly(SOC_Constellation, satellites=True, orbits=True, links=False
             for idz in range(1, sat_coords.shape[0]):
                 if idz != idy:
                     temp_coords = np.append([sat_coords[idy, :]], [sat_coords[idz, :]], axis=0)
-                    print(temp_coords)
                     if not sphere_intercept(temp_coords[0], temp_coords[1],
                                             heavenly_body_radius[SOC_Constellation.focus]):
                         fig.add_trace(
