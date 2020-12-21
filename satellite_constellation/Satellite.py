@@ -3,20 +3,22 @@ A class for creating a satellite object, describing the characteristics of it.
 """
 
 from math import pi
-from .utils import heavenly_body_radius
+from .utils import *
 import warnings
 
 
 class Satellite(object):
 
     def __init__(self, name, altitude, eccentricity, inclination, right_ascension, perigee, ta, beam,
-                 focus="earth", rads=True):
+                 focus="earth", rads=True, orbital_period=0, semi_major=0):
         self._name = name
         self._altitude = altitude
         self._focus = focus
         self._true_alt = self.altitude + self.__get_radius()
         self._eccentricity = eccentricity
         self._beam = beam
+        self.orbital_period = orbital_period
+        self.semi_major = semi_major
 
         if not rads:
             self.inclination = inclination
@@ -70,15 +72,6 @@ class Satellite(object):
     def beam(self):
         return self._beam
 
-    @beam.setter
-    def beam(self, new_beam):
-        if new_beam < 0:
-            return ValueError("Beam width must be between 0 and 180 degrees")
-        elif new_beam > 180:
-            return ValueError("Beam width must be between 0 and 180 degrees")
-        else:
-            self._beam = new_beam
-
     def __convert_to_rads(self, value=None):
         to_rad = pi / 180
         if value:
@@ -98,8 +91,10 @@ class Satellite(object):
         return heavenly_body_radius[self._focus.lower()]
 
     def __repr__(self):
-        return "{0}, {1}, {2}, {3}, {4}, {5}, {6}".format(self.name, self.altitude, self.eccentricity,
-                                                          self.inclination, self.right_ascension, self.perigee, self.ta)
+        return "{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}".format(self.name, self.altitude, self.true_alt,
+                                                               self.eccentricity,
+                                                               self.inclination, self.right_ascension, self.perigee,
+                                                               self.ta, self.semi_major)
 
     def __str__(self):
         return "Satellite Name: {0}, Alt: {1}, e: {2}, " \
@@ -133,6 +128,63 @@ class Satellite(object):
                    "Beam Width": self.beam}
         sat['Focus'] = self._focus
         sat['Type'] = 'satellite'
+
+        return sat
+
+    def as_numpy(self):
+        return np.array([
+            self.altitude, self.true_alt, self.eccentricity, self.inclination, self.right_ascension,
+            self.perigee, self.ta, self.beam, self.semi_major])
+
+    def as_PIGI(self):
+
+        catalog_number = '00000'
+        classification = 'U'
+        launch_year = 20
+        launch_number = "001"
+        designator = 'A  '
+        epoch_year = 20
+        fractional_day = "{:.8f}".format(343.4040985)
+        d_1_mean_motion = '-.00002182'
+        d_2_mean_motion = ' 00000-0'
+        drag = '-00000-0'
+        ephemeris = 0
+        element_set = '00000'
+
+        inclination = (3 - len(str(self.inclination))) * str(0) + "{:.4f}".format(float(self.inclination))
+        right_ascension = (3 - len(str(self.right_ascension))) * str(0) + "{:.4f}".format(float(self.right_ascension))
+        eccentricity = self.eccentricity * 10 ** 7
+        eccentricity = (7 - len(str(int(eccentricity)))) * str(0) + "{:.0f}".format(float(eccentricity))
+
+        p = "{:.0f}".format(float(self.perigee))
+        perigee = (3 - len(str(p))) * str(0) + "{:.4f}".format(float(self.perigee))
+
+        m = "{:.0f}".format(float(self.ta))
+        mean_anomaly = (3 - len(m)) * str(0) + "{:.4f}".format(float(self.ta))
+
+        mean_motion = 86801 / self.orbital_period
+        mean_motion = (2 - len(str(int(mean_motion)))) * str(0) + "{:.8f}".format(mean_motion)
+
+        sat = {"Name": self.name,
+               "line1": "{0} {1}{2} {3}{4}{5} {6}{7} {8} {9} {10} {11} {12}".format(
+                   1, catalog_number, classification, launch_year, launch_number, designator, epoch_year,
+                   fractional_day, d_1_mean_motion, d_2_mean_motion, drag
+                   , ephemeris, element_set),
+               "line2": "{0} {1} {2} {3} {4} {5} {6} {7}{8}{9}".format(2, catalog_number, inclination,
+                                                                       right_ascension,
+                                                                       eccentricity, perigee, mean_anomaly,
+                                                                       mean_motion, 56353, 7),
+               "category": 0,
+               "planet": 3,
+               "favourite": False,
+               "groundFov": 90.0,
+               "spaceFov": self.beam,
+               "groundFovEnabled": False,
+               "spaceFovEnabled": False,
+               "orbitLineEnabled": True,
+               "textLabelEnabled": True,
+               "TransferStates": {}
+               }
 
         return sat
 

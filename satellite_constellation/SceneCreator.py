@@ -11,7 +11,6 @@ from .utils import mod, heavenly_body_radius
 from .ConstellationExceptions import *
 
 
-
 def scene_xml_generator(scene):
     warnings.warn("XML support is depreciated and not supported from PIGI 0.8.5 onward", DeprecationWarning)
     scene_start = '<Pigi>\n' \
@@ -94,8 +93,7 @@ def scene_xml_generator(scene):
 def constellation_creator(num_constellations, satellite_nums, satellite_planes, plane_phasing, inclination, altitude,
                           eccentricity, constellation_beam_width, sat_name="Sat", focus="earth"):
     """
-
-    Need to add the streets of coverage method to the scene creator
+    Need to add the streets of coverage/flower method to the scene creator
     Change this to use 3 param
     Number of constellations
     List of constellation types
@@ -231,6 +229,18 @@ def walker_errors(num_constellations, satellite_nums, satellite_planes, plane_ph
         return False
 
 
+def flower_errors(num_petals, num_days, num_satellites, phasing_n, phasing_d, perigee_argument,
+                  inclination, perigee_altitude, beam_width, focus='earth', name="constellation"):
+
+    if phasing_d * num_days > num_satellites:
+        raise MaxSatellitesExceededError("Number of satellites specified greater than maximum possible")
+
+    if any(x < 0 for x in perigee_altitude):
+        raise AltitudeError("Negative altitude not allowed")
+    elif any(x < 100 for x in perigee_altitude):
+        raise AltitudeError("Altitude below Karman line")
+
+
 def create_scene(num_constellations, num_sats, sat_planes, plane_phasing, sat_inclination, sat_alt,
                  sat_eccentricity, const_beam_width,
                  num_ground_stations, latitudes, longitudes, elevations, beam_widths,
@@ -260,6 +270,3 @@ def create_scene(num_constellations, num_sats, sat_planes, plane_phasing, sat_in
     scene.extend(ground_array_creator(num_ground_stations, latitudes, longitudes, elevations, beam_widths, name=gsname))
 
     return scene
-
-
-

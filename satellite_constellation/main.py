@@ -1,5 +1,11 @@
-from satellite_constellation.visualiser import *
+from satellite_constellation.Constellation import *
+from plotter import visualiser
 
+#
 if __name__ == '__main__':
-    draw_walker(WalkerConstellation(8, 2, 1, 45, 1000, 0, 20))
-    draw_flower(FlowerConstellation(37, 18, 57, 6, 19, 0, 0, 19702, 30))
+    myWalker = WalkerConstellation(30, 15, 1, 60, 35786, 0, 20)
+    visualiser.draw_walker_plotly(myWalker, sensor_regions=True, links=True)
+
+    myStreets = SOCConstellation(1, 5, 15000, 60, [0], 0, 100)
+    visualiser.draw_soc_plotly(myStreets, sensor_regions=True, links=True)
+
