@@ -57,7 +57,7 @@ def draw_walker(walker_constellation):
                 coords = rotate(coords, (walker_constellation.raan[ctr]) * math.pi / 180, 'z')
                 ax[idx].scatter(coords[0], coords[1], coords[2])
 
-    plt.savefig('../../walker_plot.png', dpi=300, bbox_inches='tight')
+    plt.savefig('walker_plot.png', dpi=300, bbox_inches='tight')
 
 def draw_flower(flower_constellation):
     a = flower_constellation.semi_major
@@ -113,4 +113,4 @@ def draw_flower(flower_constellation):
             coords = rotate(coords, flower_constellation.inclination * math.pi / 180, 'x')
             ax[idx].scatter(coords[0], coords[1], coords[2], s=2)
 
-    plt.savefig('../../flower_plot.png', dpi=300, bbox_inches='tight')
+    plt.savefig('flower_plot.png', dpi=300, bbox_inches='tight')
