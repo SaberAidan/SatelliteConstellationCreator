@@ -1,1 +1,4 @@
 matplotlib
+
+# Installs this package in editable, development mode
+-e.
