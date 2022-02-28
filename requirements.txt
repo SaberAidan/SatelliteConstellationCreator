@@ -1,1 +1,4 @@
-matplotlib==3.3.3
+matplotlib
+
+# Installs this package in editable, development mode
+-e.

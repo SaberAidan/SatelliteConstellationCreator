@@ -37,8 +37,8 @@ For development::
     git remote add upstream https://github.com/SaberAidan/SatelliteConstellationCreator.git
 
     # create a virtualenv
-    python3 -m venv scc_venv
-    source scc_venv/bin/activate
+    python3 -m venv .venv
+    source .venv/bin/activate
 
     # install for development
     pip install -r requirements.txt
@@ -56,7 +56,3 @@ Credits
 -------
 
 This package is a conversion of existing academic Matlab code created by Saber Astronautics Australia Pty. Ltd. for use in creating scenes in the Predictive Interactive Ground Interface software.
-
-
-
-    
